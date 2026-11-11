@@ -927,6 +927,64 @@ async function pagarConAddi(){
   }
 }
 
+// ══ PAGO CON SISTECRÉDITO (cuotas) ══
+async function pagarConSistecredito(){
+  if(!cart.length){showToast('El carrito está vacío','error');return}
+  if(!terminosOk())return;
+  const d=leerDatosCliente();
+  const {nombre,tel,email,dir,depto,ciudad}=d;
+  if(!d.nombreBase||!d.apellido||!d.doc){showToast('Completa nombre, apellido y cédula','error');return}
+  if(!tel||!dir||!ciudad){showToast('Completa teléfono, ciudad y dirección','error');return}
+  const _subt=cart.reduce((s,i)=>s+i.price*i.qty,0);
+  const _gratis=(ENVIO_GRATIS_DESDE>0 && _subt>=ENVIO_GRATIS_DESDE);
+  if(!depto && !_gratis){showToast('Elige tu departamento para calcular el envío','error');return}
+  if(!email||email.indexOf('@')<0){showToast('Ingresa un correo válido','error');return}
+  const btn=document.querySelector('.ck-btn-siste');
+  const txtOrig=btn?btn.textContent:'';
+  if(btn)btn.textContent='Conectando con Sistecrédito...';
+  const btns=document.querySelectorAll('.ck-pagos .checkout-btn');btns.forEach(b=>b.disabled=true);
+  const restaurar=()=>{ if(btn)btn.textContent=txtOrig; btns.forEach(b=>b.disabled=false); };
+  try{
+    const orderId='AB-'+Date.now();
+    const total=_subt+costoEnvioActual;
+    // Guardar el pedido como pendiente antes de redirigir
+    try{
+      const productos=cart.map(i=>`${i.name}${i.selectedColor?' ['+i.selectedColor+']':''} x${i.qty} (${fmt(i.price*i.qty)})`).join(' | ');
+      const ref=await fdb.collection('pedidos').add({nombre,documento:d.docFmt,telefono:tel,email,direccion:d.dirCompleta,productos,envio:fmt(costoEnvioActual),total:fmt(total),fecha:new Date().toISOString(),estado:'⏳ Sistecrédito - sin confirmar',metodoPago:'Sistecrédito',orderId});
+      try{ localStorage.setItem('ab_pedido_pendiente',ref.id); }catch(e){}
+      try{ await fdb.collection('suscriptores').add({email,nombre,origen:'pedido',fecha:new Date().toISOString()}); }catch(e){}
+      await enviarCorreoPedidoNuevo({nombre,telefono:tel,email,direccion:d.dirCompleta,productos,total:fmt(total)});
+    }catch(e){}
+    const res=await fetch('/api/sistecredito-pago',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({cliente:{nombre:d.nombreBase,apellido:d.apellido,tipodoc:d.tipodoc,documento:d.doc,telefono:tel,email,ciudad,direccion:dir},orderId,total})
+    });
+    const data=await res.json();
+    if(data.url){ window.location.href=data.url; return; }
+    if(!data.transactionId){
+      showToast('Sistecrédito no está disponible en este momento. Intenta con otro método.','error');
+      console.error('Sistecrédito:',data); restaurar(); return;
+    }
+    // El link aún no está listo: consultamos el estado unos segundos
+    if(btn)btn.textContent='Preparando tu crédito...';
+    const idTx=data.transactionId;
+    for(let i=0;i<14;i++){
+      await new Promise(r=>setTimeout(r,1500));
+      try{
+        const r2=await fetch('/api/sistecredito-estado?id='+encodeURIComponent(idTx));
+        const e2=await r2.json();
+        if(e2.url){ window.location.href=e2.url; return; }
+        if(['Rejected','Cancelled','Expired','Abandoned','Failed'].includes(e2.estado)){
+          showToast('No se pudo iniciar el crédito con Sistecrédito. Intenta con otro método.','error'); restaurar(); return;
+        }
+      }catch(e){}
+    }
+    showToast('Sistecrédito está tardando en responder. Intenta de nuevo o usa otro método.','error'); restaurar();
+  }catch(e){
+    showToast('Error al conectar con Sistecrédito','error'); restaurar();
+  }
+}
+
 // ══ GENERADOR DE PUBLICACIONES REDES ══
 // ══ GENERADOR DE IMÁGENES PARA REDES ══
 function llenarSelectImagenes(){

@@ -61,7 +61,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<link rel="stylesheet" href="estilos.css?v=29">
+<link rel="stylesheet" href="estilos.css?v=30">
 </head>
 <body>
 <div id="store">
@@ -467,6 +467,7 @@
       <div class="ck-pagos">
         <button class="checkout-btn ck-btn-mp" onclick="pagarConMercadoPago()">💳 Pagar en línea (tarjeta, PSE, Nequi)</button>
         <button class="checkout-btn ck-btn-addi" onclick="pagarConAddi()" style="background:#16b364">🟢 Paga a cuotas con Addi (sin tarjeta)</button>
+        <button class="checkout-btn ck-btn-siste" onclick="pagarConSistecredito()" style="background:#0a7d78">🟣 Paga a cuotas con Sistecrédito (sin tarjeta)</button>
         <button class="checkout-btn ck-btn-contra" onclick="finalizarCompra()">📲 Pedir y pagar al recibir (WhatsApp)</button>
       </div>
       <p class="ck-nota-seg">🔒 Tus datos están seguros y solo se usan para gestionar tu pedido.</p>
@@ -490,7 +491,7 @@
 
 </div><!-- /store -->
 <div class="toast" id="toast"></div>
-<script src="app.js?v=29"></script>
+<script src="app.js?v=30"></script>
 <!-- Widget de Addi (muestra "paga desde $X al mes" en la ficha del producto) -->
 <script src="https://s3.amazonaws.com/widgets.addi.com/bundle.min.js" async></script>
 <!-- Vercel Analytics (visitas, de dónde vienen, productos más vistos) -->
