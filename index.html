@@ -61,7 +61,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<link rel="stylesheet" href="estilos.css?v=26">
+<link rel="stylesheet" href="estilos.css?v=27">
 </head>
 <body>
 <div id="store">
@@ -81,7 +81,16 @@
     <ul class="nav-links">
       <li><a href="#inicio" onclick="volverInicio()">Inicio</a></li>
       <li><a href="#catalogo" onclick="verCatalogoCompleto()">Catálogo</a></li>
-      <li><a href="#nosotros">Nosotros</a></li>
+      <li class="nav-drop">
+        <a href="#nosotros">Nosotros <span style="font-size:10px">▾</span></a>
+        <ul class="nav-submenu">
+          <li><a href="#nosotros">Sobre nosotros</a></li>
+          <li><a href="#" onclick="abrirPolitica('terminos');return false">Términos y condiciones</a></li>
+          <li><a href="#" onclick="abrirPolitica('privacidad');return false">Política de privacidad</a></li>
+          <li><a href="#" onclick="abrirPolitica('devoluciones');return false">Devoluciones y reembolsos</a></li>
+          <li><a href="#" onclick="abrirPolitica('envios');return false">Envíos</a></li>
+        </ul>
+      </li>
       <li><a href="#contacto">Contacto</a></li>
     </ul>
     <div class="nav-actions">
@@ -481,7 +490,7 @@
 
 </div><!-- /store -->
 <div class="toast" id="toast"></div>
-<script src="app.js?v=26"></script>
+<script src="app.js?v=27"></script>
 <!-- Widget de Addi (muestra "paga desde $X al mes" en la ficha del producto) -->
 <script src="https://s3.amazonaws.com/widgets.addi.com/bundle.min.js" async></script>
 <!-- Vercel Analytics (visitas, de dónde vienen, productos más vistos) -->
