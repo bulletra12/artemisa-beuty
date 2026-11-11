@@ -611,7 +611,7 @@ function doSearch(q){
     const hay=normTxt([p.name,p.cat,p.subcat,p.brand,p.desc,p.ficha].filter(Boolean).join(' '));
     return terms.every(t=>coincide(hay,t));
   });
-  if(!found.length){res.innerHTML='<div class="sr-empty">No se encontraron productos para "'+q+'"</div>';return}
+  if(!found.length){res.innerHTML='<div class="sr-empty">No se encontraron productos para "'+escHtml(q)+'"</div>';return}
   res.innerHTML=found.map(p=>`
     <div class="sr-item" onclick="closeSearch();openProductDetail(${p.id})">
       <div class="sr-img">${p.img?`<img src="${p.img}">`:(p.emoji||'✨')}</div>
@@ -1433,24 +1433,27 @@ function copiarPublicacion(){
 }
 
 // ══ NEWSLETTER ══
-async function handleNewsletter(){
-  const email=g('nl-email').value.trim();
-  if(!email||!email.includes('@')){showToast('Ingresa un correo válido','error');return}
-  try{
-    await fdb.collection('suscriptores').add({email,fecha:new Date().toISOString()});
-    showToast('¡Gracias por suscribirte! 🌸','success');
-    g('nl-email').value='';
-  }catch(e){showToast('Error al guardar correo','error')}
+// Valida que sea un correo legible de verdad (no deja meter cosas raras ni código)
+function esEmailValido(email){
+  return /^[^\s@<>"'(){}\[\]\\/]+@[^\s@<>"'(){}\[\]\\/]+\.[A-Za-z]{2,}$/.test(email) && email.length<=120;
 }
-async function handleNewsletterInicio(){
-  const email=g('nl-email-inicio').value.trim();
-  if(!email||!email.includes('@')){showToast('Ingresa un correo válido','error');return}
+async function registrarSuscriptor(inputId){
+  const inp=g(inputId); if(!inp)return;
+  const email=inp.value.trim().toLowerCase();
+  if(!esEmailValido(email)){ showToast('Ingresa un correo válido (ej: nombre@gmail.com)','error'); return; }
   try{
-    await fdb.collection('suscriptores').add({email,fecha:new Date().toISOString()});
+    // Usamos el correo como ID del documento → evita duplicados automáticamente.
+    // Si ya existe, las reglas de Firebase impiden sobrescribirlo (permission-denied) = ya está inscrito.
+    await fdb.collection('suscriptores').doc(email).set({email,fecha:new Date().toISOString()});
     showToast('¡Gracias por suscribirte! 🌸','success');
-    g('nl-email-inicio').value='';
-  }catch(e){showToast('Error al guardar correo','error')}
+    inp.value='';
+  }catch(e){
+    if(e && e.code==='permission-denied'){ showToast('Este correo ya está suscrito 🌸','success'); inp.value=''; }
+    else { showToast('Error al guardar correo','error'); console.error(e); }
+  }
 }
+async function handleNewsletter(){ return registrarSuscriptor('nl-email'); }
+async function handleNewsletterInicio(){ return registrarSuscriptor('nl-email-inicio'); }
 
 // ══ ADMIN ══
 const ADMIN_EMAILS=['silverbullet746@gmail.com','ballesteroscamila502@gmail.com'];
@@ -2745,25 +2748,25 @@ function renderPedidos(){
           <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
             <div>
               <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:3px">Cliente</div>
-              <div style="font-weight:600;font-size:14px">${p.nombre||'-'}</div>
+              <div style="font-weight:600;font-size:14px">${escHtml(p.nombre||'-')}</div>
             </div>
             <div>
               <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:3px">Teléfono</div>
-              <div style="font-size:13px"><a href="https://wa.me/57${(p.telefono||'').replace(/\D/g,'')}" target="_blank" style="color:var(--primary);text-decoration:none">📱 ${p.telefono||'-'}</a></div>
+              <div style="font-size:13px"><a href="https://wa.me/57${(p.telefono||'').replace(/\D/g,'')}" target="_blank" style="color:var(--primary);text-decoration:none">📱 ${escHtml(p.telefono||'-')}</a></div>
             </div>
             <div>
               <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:3px">Correo</div>
-              <div style="font-size:13px">${p.email?`<a href="mailto:${p.email}" style="color:var(--primary);text-decoration:none">✉️ ${p.email}</a>`:'<span style="color:var(--gray)">No dejó correo</span>'}</div>
+              <div style="font-size:13px">${p.email?`<a href="mailto:${escHtml(p.email)}" style="color:var(--primary);text-decoration:none">✉️ ${escHtml(p.email)}</a>`:'<span style="color:var(--gray)">No dejó correo</span>'}</div>
             </div>
             <div>
               <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:3px">Dirección</div>
-              <div style="font-size:13px;color:var(--gray)">${p.direccion||'-'}</div>
+              <div style="font-size:13px;color:var(--gray)">${escHtml(p.direccion||'-')}</div>
             </div>
           </div>
           <!-- Productos -->
           <div style="padding:10px 16px 14px;border-top:1px solid var(--border)">
             <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:6px">Productos</div>
-            <div style="font-size:13px;line-height:1.6;color:var(--black)">${(p.productos||'-').split('|').map(pr=>`<div>• ${pr.trim()}</div>`).join('')}</div>
+            <div style="font-size:13px;line-height:1.6;color:var(--black)">${(p.productos||'-').split('|').map(pr=>`<div>• ${escHtml(pr.trim())}</div>`).join('')}</div>
           </div>
         </div>
       </td>
@@ -2867,9 +2870,9 @@ async function cargarSuscriptores(){
     g('sub-table').innerHTML=subs.length?subs.map((s,i)=>`
       <tr>
         <td style="color:var(--gray);font-size:12px">${i+1}</td>
-        <td style="font-weight:500">${s.email}</td>
+        <td style="font-weight:500">${escHtml(s.email||'')}</td>
         <td style="color:var(--gray);font-size:12px">${s.fecha?new Date(s.fecha).toLocaleDateString('es-CO'):'-'}</td>
-        <td><button class="act-btn danger" onclick="borrarSuscriptor('${s.id}','${(s.email||'').replace(/'/g,"")}')" title="Borrar">🗑️</button></td>
+        <td><button class="act-btn danger" onclick="borrarSuscriptor('${String(s.id).replace(/['\\]/g,'')}','${(s.email||'').replace(/['\\<>]/g,'')}')" title="Borrar">🗑️</button></td>
       </tr>`).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--gray);padding:20px">No hay suscriptores aún</td></tr>';
   }catch(e){g('sub-count').textContent='Error al cargar';console.error(e)}
 }
@@ -2951,10 +2954,10 @@ function renderReviews(){
       <thead><tr><th>Cliente</th><th>Ciudad</th><th>Estrellas</th><th>Reseña</th><th>Acciones</th></tr></thead>
       <tbody>${reviews.map(r=>`
         <tr>
-          <td><strong>${r.emoji} ${r.name}</strong></td>
-          <td style="color:var(--gray);font-size:12px">${r.city}</td>
-          <td style="color:var(--gold)">${r.stars}</td>
-          <td style="font-size:12px;color:var(--gray);max-width:200px">${r.text.substring(0,60)}...</td>
+          <td><strong>${escHtml(r.emoji)} ${escHtml(r.name)}</strong></td>
+          <td style="color:var(--gray);font-size:12px">${escHtml(r.city)}</td>
+          <td style="color:var(--gold)">${escHtml(r.stars)}</td>
+          <td style="font-size:12px;color:var(--gray);max-width:200px">${escHtml(String(r.text||'').substring(0,60))}...</td>
           <td><button class="act-btn danger" onclick="delReview(${r.id})">🗑️</button></td>
         </tr>`).join('')}
       </tbody>
