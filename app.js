@@ -502,6 +502,10 @@ function openProductDetail(id){
       <div class="pd-price">${p.oldPrice?`<span class="pd-old">${fmt(p.oldPrice)}</span>`:''} ${fmt(p.price)}</div>
       ${p.tamano?`<div style="font-size:12px;color:var(--gray);margin:2px 0 6px">Presentación: <strong style="color:var(--black)">${escHtml(p.tamano)}</strong></div>`:''}
       <div style="margin:6px 0 10px"><addi-widget price="${p.price}" ally-slug="artemisabellezajyc-ecommerce"></addi-widget></div>
+      <div style="display:inline-flex;align-items:center;gap:8px;background:#f0faf9;border:1px solid #cdeae8;border-radius:10px;padding:7px 12px;margin:0 0 10px;font-size:12.5px;color:#0a5c58;line-height:1.3">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;min-width:22px;border-radius:50%;background:#0a7d78;color:#fff;font-weight:700;font-size:12px">S</span>
+        <span>Paga con <strong>Sistecrédito</strong> en hasta 6 cuotas · <strong>desde ${fmt(Math.round(p.price/6))}</strong></span>
+      </div>
       ${colorHtml}
       <div id="pd-text-wrap" class="pd-collapse">
         <div class="pd-desc">${p.desc||'<em>Sin descripción aún.</em>'}</div>
