@@ -12,7 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<link rel="stylesheet" href="estilos.css?v=40">
+<link rel="stylesheet" href="estilos.css?v=41">
 </head>
 <body>
 <div id="login-screen" style="display:flex">
@@ -468,7 +468,7 @@
           <div class="config-card" style="grid-column:1/-1">
             <h4>🖼️ Imágenes de los botones de pago</h4>
             <p style="font-size:12px;color:var(--gray);margin-bottom:6px">Sube tu imagen para cada botón del checkout. Si no subes ninguna, el botón se muestra con texto (como ahora).</p>
-            <p style="font-size:12px;color:#8a5a66;margin-bottom:14px"><b>Medida ideal:</b> ancho 1000px × alto ~320px (proporción 3:1), con <b>fondo blanco</b> (no gris ni transparente) para que se vea limpio sobre el checkout.</p>
+            <p style="font-size:12px;color:#8a5a66;margin-bottom:14px"><b>Medida ideal:</b> una imagen <b>ancha y bajita</b> (ej: 1000 × 240 px, proporción ~4:1). Entre más ancha, más llena el botón. Fondo <b>blanco</b> (no gris ni transparente) para que se vea limpio. El botón se muestra con alto fijo, así que no importa si subes una un poco más alta: se ajusta sola.</p>
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px">
               <div style="border:1px solid var(--border);border-radius:8px;padding:12px">
                 <div style="font-weight:600;font-size:13px;margin-bottom:8px">💳 Mercado Pago</div>
@@ -720,6 +720,6 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="app.js?v=40"></script>
+<script src="app.js?v=41"></script>
 </body>
 </html>
