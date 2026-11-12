@@ -481,7 +481,7 @@ function openProductDetail(id){
   // Colores: preferir la lista estructurada (paleta + nombre); si no, el texto antiguo
   let colorPares=[];
   if(Array.isArray(p.coloresLista)&&p.coloresLista.length){
-    colorPares=p.coloresLista.filter(c=>c&&c.name).map(c=>({name:c.name,hex:c.hex||getColorHex(c.name)||'#dddddd'}));
+    colorPares=p.coloresLista.filter(c=>c&&c.name).map(c=>({name:c.name,hex:c.hex||getColorHex(c.name)||'#dddddd',stock:c.stock}));
   }else if(p.colors){
     colorPares=p.colors.split(',').map(s=>s.trim()).filter(Boolean).map(nm=>({name:nm,hex:getColorHex(nm)||tonoPielAuto(nm)}));
   }
@@ -490,9 +490,13 @@ function openProductDetail(id){
     const swatches=colorPares.map(c=>{
       const bg=c.hex||'#ddd';
       const inner=(!c.hex)?`<span style="font-size:9px;color:#555;display:flex;align-items:center;justify-content:center;height:100%;padding:2px;text-align:center;line-height:1">${c.name}</span>`:'';
+      const agotado=(typeof c.stock==='number' && c.stock<=0);
+      if(agotado){
+        return`<div class="color-swatch" style="width:36px;height:36px;border-radius:6px;border:2px solid transparent;background:${bg};flex-shrink:0;position:relative;opacity:.4;cursor:not-allowed" title="${c.name} (Agotado)">${inner}<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:17px;color:#c0392b;font-weight:800">✕</span></div>`;
+      }
       return`<div class="color-swatch" style="width:36px;height:36px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all .2s;background:${bg};flex-shrink:0" title="${c.name}" onclick="selectColor('${c.name.replace(/'/g,"\\'")}',this)">${inner}</div>`;
     }).join('');
-    colorHtml=`<div style="margin:14px 0 8px"><div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:6px;font-weight:600">Color: <span id="sel-color-lb" style="color:var(--primary)">Selecciona un color</span></div><div style="display:flex;gap:8px;flex-wrap:wrap">${swatches}</div></div>`;
+    colorHtml=`<div style="margin:14px 0 8px"><div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:6px;font-weight:600">Color: <span id="sel-color-lb" style="color:var(--primary)">Selecciona un color</span></div><div id="pd-colores-wrap" class="pd-col-collapse" style="display:flex;gap:8px;flex-wrap:wrap">${swatches}</div><button type="button" id="pd-colores-toggle" onclick="toggleColores()" style="display:none;margin-top:8px;background:none;border:none;color:var(--primary);font-weight:600;font-size:12px;cursor:pointer;font-family:var(--sans);padding:0">Ver más colores ▾</button></div>`;
   }
   g('product-detail-body').innerHTML=`
     <div class="pd-col-img">
@@ -507,10 +511,6 @@ function openProductDetail(id){
       ${p.tamano?`<div style="font-size:12px;color:var(--gray);margin:2px 0 6px">Presentación: <strong style="color:var(--black)">${escHtml(p.tamano)}</strong></div>`:''}
       ${_tamanoHtml}
       <div style="margin:6px 0 10px"><addi-widget price="${_precioBase}" ally-slug="artemisabellezajyc-ecommerce"></addi-widget></div>
-      <div style="display:inline-flex;align-items:center;gap:8px;background:#f0faf9;border:1px solid #cdeae8;border-radius:10px;padding:7px 12px;margin:0 0 10px;font-size:12.5px;color:#0a5c58;line-height:1.3">
-        <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;min-width:22px;border-radius:50%;background:#0a7d78;color:#fff;font-weight:700;font-size:12px">S</span>
-        <span>Paga con <strong>Sistecrédito</strong> en hasta 6 cuotas · <strong id="siste-cuota">desde ${fmt(Math.round(_precioBase/6))}</strong></span>
-      </div>
       ${colorHtml}
       <div id="pd-text-wrap" class="pd-collapse">
         <div class="pd-desc">${p.desc||'<em>Sin descripción aún.</em>'}</div>
@@ -536,6 +536,9 @@ function openProductDetail(id){
   setTimeout(()=>{
     const tw=g('pd-text-wrap'),tg=g('pd-toggle');
     if(tw&&tg){ if(tw.scrollHeight>tw.clientHeight+12){ tg.style.display='inline-block'; } else { tw.classList.add('open'); tg.style.display='none'; } }
+    // Colapsar paleta de colores si ocupa más de ~2 líneas
+    const cw=g('pd-colores-wrap'),cg=g('pd-colores-toggle');
+    if(cw&&cg){ if(cw.scrollHeight>cw.clientHeight+10){ cg.style.display='inline-block'; } else { cw.classList.add('open'); cg.style.display='none'; } }
   },60);
   activarLente();
 }
@@ -543,6 +546,11 @@ function togglePdText(){
   const tw=g('pd-text-wrap'),tg=g('pd-toggle');if(!tw)return;
   const open=tw.classList.toggle('open');
   if(tg)tg.textContent=open?'Mostrar menos ▴':'Mostrar más ▾';
+}
+function toggleColores(){
+  const cw=g('pd-colores-wrap'),cg=g('pd-colores-toggle');if(!cw)return;
+  const open=cw.classList.toggle('open');
+  if(cg)cg.textContent=open?'Ver menos colores ▴':'Ver más colores ▾';
 }
 function cambiarPdQty(delta){
   window._pdQty=Math.max(1,(window._pdQty||1)+delta);
@@ -2101,8 +2109,13 @@ function onTipoProducto(){
 }
 function renderColoresElegidos(){
   const cont=g('colores-elegidos');if(!cont)return;
-  cont.innerHTML=coloresProd.map((c,i)=>`<div style="display:flex;align-items:center;gap:8px"><input type="color" data-sw="${i}" value="${hexValido(c.hex)}" oninput="setColorHex(${i},this.value)" title="Tocar para elegir el color exacto de este tono" style="width:34px;height:34px;min-width:34px;padding:0;border:1px solid rgba(0,0,0,.2);border-radius:6px;cursor:pointer;background:none"><input value="${(c.name||'').replace(/"/g,'&quot;')}" oninput="renombrarColorProd(${i},this.value)" placeholder="Nombre (ej: 01 Light, Marfil, Tono ${i+1})" style="flex:1;border:1px solid var(--border);padding:8px 10px;font-size:13px;border-radius:4px;font-family:var(--sans)"><button type="button" class="act-btn danger" onclick="quitarColorProd(${i})" title="Quitar">✕</button></div>`).join('');
+  cont.innerHTML=coloresProd.map((c,i)=>`<div style="display:flex;align-items:center;gap:8px"><input type="color" data-sw="${i}" value="${hexValido(c.hex)}" oninput="setColorHex(${i},this.value)" title="Tocar para elegir el color exacto de este tono" style="width:34px;height:34px;min-width:34px;padding:0;border:1px solid rgba(0,0,0,.2);border-radius:6px;cursor:pointer;background:none"><input value="${(c.name||'').replace(/"/g,'&quot;')}" oninput="renombrarColorProd(${i},this.value)" placeholder="Nombre (ej: 01 Light, Marfil, Tono ${i+1})" style="flex:1;min-width:0;border:1px solid var(--border);padding:8px 10px;font-size:13px;border-radius:4px;font-family:var(--sans)"><input type="number" min="0" value="${(c.stock===null||c.stock===undefined||c.stock==='')?'':c.stock}" oninput="setColorStock(${i},this.value)" placeholder="Stock" title="Unidades de este color. Vacío = sin control. 0 = sale AGOTADO en la tienda." style="width:70px;min-width:70px;border:1px solid var(--border);padding:8px 8px;font-size:13px;border-radius:4px;font-family:var(--sans)"><button type="button" class="act-btn danger" onclick="quitarColorProd(${i})" title="Quitar">✕</button></div>`).join('');
   syncColorsHidden();
+}
+function setColorStock(i,val){
+  if(!coloresProd[i])return;
+  const v=String(val).trim();
+  coloresProd[i].stock=(v==='')?undefined:Math.max(0,parseInt(v)||0);
 }
 // Toma el texto pegado del proveedor y lo organiza: un dato limpio por línea, sin basura ni repetidos.
 function organizarFicha(){
@@ -2167,7 +2180,7 @@ async function autollenarConIA(){
 function cargarColoresProd(p){
   coloresProd=[];
   if(p && Array.isArray(p.coloresLista) && p.coloresLista.length){
-    coloresProd=p.coloresLista.map(c=>{const sg=['#cccccc','#dddddd',''].includes((c.hex||'').toLowerCase());const h=sg?(getColorHex(c.name)||tonoPielAuto(c.name)||'#dddddd'):c.hex;return {name:c.name||'',hex:h,auto:sg};});
+    coloresProd=p.coloresLista.map(c=>{const sg=['#cccccc','#dddddd',''].includes((c.hex||'').toLowerCase());const h=sg?(getColorHex(c.name)||tonoPielAuto(c.name)||'#dddddd'):c.hex;return {name:c.name||'',hex:h,auto:sg,stock:c.stock};});
   }else if(p && p.colors){
     coloresProd=p.colors.split(',').map(s=>s.trim()).filter(Boolean).map(nm=>{const h=getColorHex(nm)||tonoPielAuto(nm)||'#dddddd';return {name:nm,hex:h,auto:!getColorHex(nm)};});
   }
@@ -2254,7 +2267,7 @@ async function saveProduct(){
   if(!finalImg && extra.length) finalImg=extra[0];
   const imgs=[...new Set([finalImg,...extra].filter(Boolean))];
   // Colores estructurados (paleta + nombre), tamaño y ficha técnica
-  const coloresLista=coloresProd.map(c=>({name:(c.name||'').trim(),hex:c.hex})).filter(c=>c.name);
+  const coloresLista=coloresProd.map(c=>{const o={name:(c.name||'').trim(),hex:c.hex};if(typeof c.stock==='number')o.stock=c.stock;return o;}).filter(c=>c.name);
   const colorsStr=coloresLista.map(c=>c.name).join(', ')||null;
   const tamano=(g('f-tamano')?.value||'').trim()||null;
   const ficha=(g('f-ficha')?.value||'').trim()||null;
@@ -2509,21 +2522,25 @@ function subirFotoHero(input){
 // ══ IMÁGENES DE LOS BOTONES DE PAGO (las sube el admin desde el panel) ══
 let _botonesPago={};
 const BTN_PAGO_FALLBACK={
-  mp:{sel:'.ck-btn-mp',txt:'💳 Pagar en línea (tarjeta, PSE, Nequi)',bg:'#009ee3'},
-  addi:{sel:'.ck-btn-addi',txt:'🟢 Paga a cuotas con Addi (sin tarjeta)',bg:'#16b364'},
-  siste:{sel:'.ck-btn-siste',txt:'🟣 Paga a cuotas con Sistecrédito (sin tarjeta)',bg:'#0a7d78'},
-  contra:{sel:'.ck-btn-contra',txt:'📲 Pedir y pagar al recibir (WhatsApp)',bg:'var(--primary)'}
+  mp:{sel:'.ck-btn-mp',title:'Pagar en línea',sub:'Tarjeta · PSE · Nequi',color:'#009ee3'},
+  addi:{sel:'.ck-btn-addi',title:'Paga a cuotas con Addi',sub:'Sin tarjeta de crédito',color:'#1f35ff'},
+  siste:{sel:'.ck-btn-siste',title:'Paga a cuotas con Sistecrédito',sub:'Sin tarjeta de crédito',color:'#39a935'},
+  contra:{sel:'.ck-btn-contra',title:'Pago contra entrega',sub:'Pagas al recibir en casa',color:'#b5516a'}
 };
+function htmlBotonMin(f){
+  return '<span class="pb-dot" style="background:'+f.color+'"></span><span class="pb-txt"><span class="pb-main">'+f.title+'</span><span class="pb-sub">'+f.sub+'</span></span>';
+}
 function aplicarBotonesPago(d){
   d=d||{};
   for(const k in BTN_PAGO_FALLBACK){
     const f=BTN_PAGO_FALLBACK[k];
     const btn=document.querySelector(f.sel); if(!btn)continue;
     if(d[k]){
-      btn.classList.add('pay-img'); btn.style.background='none';
-      btn.innerHTML='<img src="'+d[k]+'" alt="'+f.txt+'">';
+      btn.classList.add('pay-img'); btn.classList.remove('pb-min'); btn.style.background='none';
+      btn.innerHTML='<img src="'+d[k]+'" alt="'+f.title+'">';
     }else{
-      btn.classList.remove('pay-img'); btn.style.background=f.bg; btn.textContent=f.txt;
+      btn.classList.remove('pay-img'); btn.classList.add('pb-min'); btn.style.background='';
+      btn.innerHTML=htmlBotonMin(f);
     }
   }
 }

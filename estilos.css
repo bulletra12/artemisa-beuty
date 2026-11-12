@@ -104,6 +104,8 @@ nav{position:sticky;top:0;z-index:200;background:var(--white);border-bottom:1px 
 /* Texto colapsable en la ficha del producto (Mostrar más) */
 .pd-collapse{max-height:120px;overflow:hidden;position:relative;transition:max-height .35s ease}
 .pd-collapse.open{max-height:4000px}
+.pd-col-collapse{max-height:92px;overflow:hidden;transition:max-height .35s ease}
+.pd-col-collapse.open{max-height:1600px}
 .pd-collapse:not(.open)::after{content:'';position:absolute;left:0;right:0;bottom:0;height:46px;background:linear-gradient(transparent,#fff);pointer-events:none}
 #pd-toggle{background:none;border:none;color:var(--primary);font-weight:600;font-size:13px;cursor:pointer;padding:6px 0;font-family:var(--sans)}
 
@@ -253,6 +255,13 @@ select.ck-input{cursor:pointer;appearance:none;background-image:url("data:image/
 .pay-img{padding:0!important;border:none!important;background:none!important;width:100%;position:relative;cursor:pointer;line-height:0;display:flex;justify-content:center;align-items:center;transition:transform .15s}
 .pay-img img{height:60px;width:auto;max-width:100%;display:block;object-fit:contain;border-radius:12px}
 .pay-img:hover{filter:none;transform:translateY(-2px)}
+/* Botones de pago minimalistas (texto) */
+.checkout-btn.pb-min{background:#fff;color:var(--black);border:1px solid var(--border);border-radius:13px;display:flex;align-items:center;gap:13px;text-align:left;padding:13px 16px;text-transform:none;letter-spacing:0;font-weight:500}
+.checkout-btn.pb-min:hover{filter:none;border-color:var(--primary);background:#fffafb}
+.pb-min .pb-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.pb-min .pb-txt{display:flex;flex-direction:column;line-height:1.25}
+.pb-min .pb-main{font-size:14px;font-weight:600}
+.pb-min .pb-sub{font-size:11.5px;color:var(--gray)}
 .checkout-btn.loading{pointer-events:none}
 .checkout-btn.loading::after{content:'Procesando…';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.85);color:#1a1a1a;font-family:var(--sans);font-size:14px;font-weight:600;letter-spacing:.03em;border-radius:16px}
 .checkout-btn:disabled{opacity:.55}
