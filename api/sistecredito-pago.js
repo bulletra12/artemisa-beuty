@@ -77,7 +77,11 @@ module.exports = async function handler(req, res) {
     });
     const createData = await createResp.json().catch(() => ({}));
 
-    if (createResp.status !== 200 || !createData || !createData.data) {
+    // Sistecrédito responde 200 o 201 al crear. Lo válido es que traiga data._id
+    // y errorCode 0 (si viene errorCode).
+    const creacionOk = createData && createData.data && createData.data._id
+      && (typeof createData.errorCode !== 'number' || createData.errorCode === 0);
+    if (!creacionOk) {
       return res.status(200).json({
         error: 'Sistecrédito no pudo crear la transacción',
         status: createResp.status,
