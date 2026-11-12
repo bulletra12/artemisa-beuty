@@ -992,7 +992,7 @@ async function pagarConSistecredito(){
       try{ await fdb.collection('suscriptores').add({email,nombre,origen:'pedido',fecha:new Date().toISOString()}); }catch(e){}
       await enviarCorreoPedidoNuevo({nombre,telefono:tel,email,direccion:d.dirCompleta,productos,total:fmt(total)});
     }catch(e){}
-    const res=await fetch('/api/sistecredito-pago',{
+    const res=await fetch('/api/sistecredito?action=pago',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({cliente:{nombre:d.nombreBase,apellido:d.apellido,tipodoc:d.tipodoc,documento:d.doc,telefono:tel,email,ciudad,direccion:dir},orderId,total})
     });
@@ -1008,7 +1008,7 @@ async function pagarConSistecredito(){
     for(let i=0;i<14;i++){
       await new Promise(r=>setTimeout(r,1500));
       try{
-        const r2=await fetch('/api/sistecredito-estado?id='+encodeURIComponent(idTx));
+        const r2=await fetch('/api/sistecredito?action=estado&id='+encodeURIComponent(idTx));
         const e2=await r2.json();
         if(e2.url){ window.location.href=e2.url; return; }
         if(['Rejected','Cancelled','Expired','Abandoned','Failed'].includes(e2.estado)){
@@ -3466,7 +3466,7 @@ function checkPagoRetorno(){
     cart=[];if(typeof saveCart==='function')saveCart();if(typeof updateCartUI==='function')updateCartUI();
     const ref=params.get('paymentRef')||'';
     const verificar=()=>{
-      fetch('/api/sistecredito-estado?id='+encodeURIComponent(ref)).then(r=>r.json()).then(e=>{
+      fetch('/api/sistecredito?action=estado&id='+encodeURIComponent(ref)).then(r=>r.json()).then(e=>{
         const est=(e.estado||'').toLowerCase();
         if(est==='approved'){
           marcarPedidoPagado('✅ PAGADO (Sistecrédito)');
