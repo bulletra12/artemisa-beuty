@@ -12,7 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<link rel="stylesheet" href="estilos.css?v=37">
+<link rel="stylesheet" href="estilos.css?v=38">
 </head>
 <body>
 <div id="login-screen" style="display:flex">
@@ -589,6 +589,16 @@
         <div class="ff"><label>Nombre *</label><input id="f-name" placeholder="Nombre del producto"></div>
         <div class="ff"><label>Marca</label><input id="f-brand" placeholder="Ej: Origen Botánico"></div>
       </div>
+      <div class="ff">
+        <label>Tipo de producto</label>
+        <select id="f-tipo" onchange="onTipoProducto()">
+          <option value="Único">Producto único (pocos colores)</option>
+          <option value="Tintes">Tintes</option>
+          <option value="Esmaltes">Esmaltes</option>
+          <option value="Otro">Otro</option>
+        </select>
+        <p id="tipo-hint" style="font-size:11px;color:#8a5a66;margin-top:6px;display:none"></p>
+      </div>
       <div class="ff"><label>SKU / Código</label><input id="f-sku" placeholder="Código del producto"></div>
       <div class="fg">
         <div class="ff"><label>Categoría</label>
@@ -635,10 +645,16 @@
         <input id="f-tamano" placeholder="Ej: 30 ml · 250 g · 100 cápsulas">
       </div>
       <div class="ff">
+        <label>Tamaños con precio (opcional)</label>
+        <p style="font-size:11px;color:var(--gray);margin-bottom:8px">Si el producto viene en varias presentaciones con distinto precio (ej: 10 ml, 15 ml), agrégalas aquí. El cliente elige el tamaño y el precio cambia solo. Deja el "Precio venta" como el del tamaño más pequeño.</p>
+        <div id="tamanos-elegidos" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+        <button type="button" class="act-btn" onclick="agregarTamano()" style="background:var(--light);border:1px dashed var(--border);color:var(--black)">➕ Añadir tamaño</button>
+      </div>
+      <div class="ff">
         <label>Colores disponibles (opcional)</label>
         <p style="font-size:11px;color:var(--gray);margin-bottom:8px">Toca un color de la paleta para agregarlo. Luego ponle el nombre que quieras (Marfil, Tono 1…).</p>
         <input type="hidden" id="f-colors">
-        <div style="background:#fdf5f6;border:1px solid #f0d9de;border-radius:7px;padding:9px 11px;margin-bottom:10px">
+        <div id="caja-lissia" style="background:#fdf5f6;border:1px solid #f0d9de;border-radius:7px;padding:9px 11px;margin-bottom:10px">
           <div style="font-size:11px;color:#8a5a66;font-weight:600;margin-bottom:7px">💇 ¿Es un tinte Lissia? Carga todos los tonos de una:</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button type="button" class="act-btn" onclick="cargarTintesLissia('con')" style="background:#b5516a;color:#fff;border:none">Con amoníaco (37 tonos)</button>
@@ -673,6 +689,6 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="app.js?v=37"></script>
+<script src="app.js?v=38"></script>
 </body>
 </html>

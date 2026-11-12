@@ -259,7 +259,7 @@ function cardHtml(p){
         <div class="card-name">${p.name}</div>
         <div class="card-stars">${p.stars}</div>
         <div class="card-footer">
-          <div class="card-price">${p.oldPrice?`<span class="card-old">${fmt(p.oldPrice)}</span>`:''}${fmt(p.price)}</div>
+          <div class="card-price">${(p.tamanos&&p.tamanos.length)?('desde '+fmt(Math.min(...p.tamanos.map(t=>t.p)))):((p.oldPrice?`<span class="card-old">${fmt(p.oldPrice)}</span>`:'')+fmt(p.price))}</div>
           ${ago?'<div style="padding:6px 14px;border-radius:20px;background:#eee;color:#999;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase">Agotado</div>':`<button class="card-add cta-guino" onclick="event.stopPropagation();addCart(${p.id})">+</button>`}
         </div>
       </div>
@@ -461,6 +461,10 @@ function selectColor(color,el){
 function openProductDetail(id){
   const p=products.find(x=>x.id===id);if(!p)return;
   window._selectedColor=null;window._pdQty=1;
+  window._pdProductId=id;
+  window._selectedTamano=(p.tamanos&&p.tamanos.length)?p.tamanos[0]:null;
+  const _precioBase=window._selectedTamano?window._selectedTamano.p:p.price;
+  const _tamanoHtml=(p.tamanos&&p.tamanos.length)?`<div style="margin:12px 0 6px"><div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:6px;font-weight:600">Tamaño</div><div style="display:flex;gap:8px;flex-wrap:wrap">${p.tamanos.map((t,i)=>`<button type="button" onclick="selectTamano(${i})" data-ti="${i}" class="pd-tam-btn" style="padding:8px 14px;border:1.5px solid ${i===0?'var(--primary)':'var(--border)'};background:${i===0?'#fdf0f3':'#fff'};border-radius:20px;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:600;color:var(--black)">${escHtml(t.t)}</button>`).join('')}</div></div>`:'';
   const galeria=(p.imgs&&p.imgs.length)?p.imgs:(p.img?[p.img]:[]);
   const principal=galeria[0]||null;
   const imgHt=principal
@@ -499,12 +503,13 @@ function openProductDetail(id){
       <div class="pd-cat">${p.cat}</div>
       <div class="pd-name">${p.name}</div>
       <div class="pd-stars">${p.stars}</div>
-      <div class="pd-price">${p.oldPrice?`<span class="pd-old">${fmt(p.oldPrice)}</span>`:''} ${fmt(p.price)}</div>
+      <div class="pd-price">${(!window._selectedTamano&&p.oldPrice)?`<span class="pd-old">${fmt(p.oldPrice)}</span> `:''}<span id="pd-price-val">${fmt(_precioBase)}</span></div>
       ${p.tamano?`<div style="font-size:12px;color:var(--gray);margin:2px 0 6px">Presentación: <strong style="color:var(--black)">${escHtml(p.tamano)}</strong></div>`:''}
-      <div style="margin:6px 0 10px"><addi-widget price="${p.price}" ally-slug="artemisabellezajyc-ecommerce"></addi-widget></div>
+      ${_tamanoHtml}
+      <div style="margin:6px 0 10px"><addi-widget price="${_precioBase}" ally-slug="artemisabellezajyc-ecommerce"></addi-widget></div>
       <div style="display:inline-flex;align-items:center;gap:8px;background:#f0faf9;border:1px solid #cdeae8;border-radius:10px;padding:7px 12px;margin:0 0 10px;font-size:12.5px;color:#0a5c58;line-height:1.3">
         <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;min-width:22px;border-radius:50%;background:#0a7d78;color:#fff;font-weight:700;font-size:12px">S</span>
-        <span>Paga con <strong>Sistecrédito</strong> en hasta 6 cuotas · <strong>desde ${fmt(Math.round(p.price/6))}</strong></span>
+        <span>Paga con <strong>Sistecrédito</strong> en hasta 6 cuotas · <strong id="siste-cuota">desde ${fmt(Math.round(_precioBase/6))}</strong></span>
       </div>
       ${colorHtml}
       <div id="pd-text-wrap" class="pd-collapse">
@@ -543,19 +548,34 @@ function cambiarPdQty(delta){
   window._pdQty=Math.max(1,(window._pdQty||1)+delta);
   const el=g('pd-qty');if(el)el.textContent=window._pdQty;
 }
+function selectTamano(idx){
+  const p=products.find(x=>x.id===window._pdProductId);
+  if(!p||!p.tamanos||!p.tamanos[idx])return;
+  window._selectedTamano=p.tamanos[idx];
+  const cont=g('product-detail-body');
+  if(cont)cont.querySelectorAll('.pd-tam-btn').forEach(b=>{
+    const on=String(b.getAttribute('data-ti'))===String(idx);
+    b.style.border='1.5px solid '+(on?'var(--primary)':'var(--border)');
+    b.style.background=on?'#fdf0f3':'#fff';
+  });
+  const pv=g('pd-price-val');if(pv)pv.textContent=fmt(p.tamanos[idx].p);
+  const sc=g('siste-cuota');if(sc)sc.textContent='desde '+fmt(Math.round(p.tamanos[idx].p/6));
+}
 function addCartWithColor(id){
   const p=products.find(x=>x.id===id);
   if(!p)return;
   if(estaAgotado(p)){showToast('Este producto está agotado','error');return;}
   const cols=(Array.isArray(p.coloresLista)&&p.coloresLista.length)?p.coloresLista.filter(c=>c&&c.name).map(c=>c.name):(p.colors?p.colors.split(',').map(c=>c.trim()).filter(Boolean):[]);
   if(cols.length&&!window._selectedColor){showToast('Selecciona un color primero','error');return}
+  const tam=(p.tamanos&&p.tamanos.length)?(window._selectedTamano||p.tamanos[0]):null;
+  const precio=tam?tam.p:p.price;
   const qty=Math.max(1,window._pdQty||1);
-  const key=String(id)+'_'+(window._selectedColor||'');
+  const key=String(id)+'_'+(window._selectedColor||'')+'_'+(tam?tam.t:'');
   const ex=cart.find(x=>x._cartKey===key);
   if(ex)ex.qty+=qty;
-  else cart.push({...p,selectedColor:window._selectedColor||null,qty:qty,_cartKey:key});
+  else cart.push({...p,price:precio,selectedColor:window._selectedColor||null,selectedTamano:tam?tam.t:null,qty:qty,_cartKey:key});
   updateCartUI();
-  showToast('✓ '+qty+' × '+p.name+(window._selectedColor?' - '+window._selectedColor:'')+ ' añadido','success');
+  showToast('✓ '+qty+' × '+p.name+(tam?' ('+tam.t+')':'')+(window._selectedColor?' - '+window._selectedColor:'')+ ' añadido','success');
   closeProductDetail();
 }
 function closeProductDetail(){g('product-detail-modal').classList.remove('open')}
@@ -629,6 +649,7 @@ function addCart(id){
   const p=products.find(x=>x.id===id);
   if(!p)return;
   if(estaAgotado(p)){showToast('Este producto está agotado','error');return;}
+  if(p.tamanos&&p.tamanos.length){openProductDetail(id);return;} // tiene tamaños: que elija uno
   const key=String(id)+'_';
   const ex=cart.find(x=>x._cartKey===key);
   if(ex)ex.qty++;else cart.push({...p,qty:1,_cartKey:key,selectedColor:null});
@@ -636,13 +657,14 @@ function addCart(id){
 }
 function rmCart(key){cart=cart.filter(x=>(x._cartKey||x.id)!==key);updateCartUI()}
 function chQty(key,d){const i=cart.find(x=>(x._cartKey||x.id)===(typeof key==='number'?key:key));if(!i)return;i.qty+=d;if(i.qty<=0)rmCart(key);else updateCartUI()}
+function labelItem(i){return (i.name||'')+(i.selectedTamano?' ('+i.selectedTamano+')':'')+(i.selectedColor?' ['+i.selectedColor+']':'');}
 function updateCartUI(){
   try{localStorage.setItem('artemisa_cart',JSON.stringify(cart))}catch(e){}
   const total=cart.reduce((s,i)=>s+i.price*i.qty,0),count=cart.reduce((s,i)=>s+i.qty,0);
   g('cart-count').textContent=count;
   const el=g('cart-items'),ftr=g('cart-ftr');
   if(!cart.length){el.innerHTML='<div class="cart-empty"><span>🛍️</span><p>Tu carrito está vacío</p></div>';ftr.style.display='none';return}
-  el.innerHTML=cart.map(i=>`<div class="c-item"><div class="c-img">${i.img?`<img src="${i.img}">`:(i.emoji||'✨')}</div><div class="c-info"><div class="c-name">${i.name}${i.selectedColor?` <span style="font-size:10px;color:var(--gray)">- ${i.selectedColor}</span>`:''}</div><div class="c-price">${fmt(i.price)}</div><div class="c-qty"><button class="q-btn" onclick="chQty('${i._cartKey||i.id}',-1)">−</button><span class="q-num">${i.qty}</span><button class="q-btn" onclick="chQty('${i._cartKey||i.id}',1)">+</button></div></div><button class="rm-btn" onclick="rmCart('${i._cartKey||i.id}')">×</button></div>`).join('');
+  el.innerHTML=cart.map(i=>`<div class="c-item"><div class="c-img">${i.img?`<img src="${i.img}">`:(i.emoji||'✨')}</div><div class="c-info"><div class="c-name">${i.name}${i.selectedTamano?` <span style="font-size:10px;color:var(--gray)">(${i.selectedTamano})</span>`:''}${i.selectedColor?` <span style="font-size:10px;color:var(--gray)">- ${i.selectedColor}</span>`:''}</div><div class="c-price">${fmt(i.price)}</div><div class="c-qty"><button class="q-btn" onclick="chQty('${i._cartKey||i.id}',-1)">−</button><span class="q-num">${i.qty}</span><button class="q-btn" onclick="chQty('${i._cartKey||i.id}',1)">+</button></div></div><button class="rm-btn" onclick="rmCart('${i._cartKey||i.id}')">×</button></div>`).join('');
   if(g('c-sub'))g('c-sub').textContent=fmt(total);
   if(g('c-sub-cart'))g('c-sub-cart').textContent=fmt(total);
   ftr.style.display='block';
@@ -777,7 +799,7 @@ async function pagarConMercadoPago(){
   btnMP.textContent='Conectando con Mercado Pago...';
   try{
     const items=cart.map(i=>({
-      title:i.name+(i.selectedColor?' ['+i.selectedColor+']':''),
+      title:labelItem(i),
       quantity:i.qty,
       unit_price:i.price
     }));
@@ -795,7 +817,7 @@ async function pagarConMercadoPago(){
     if(url){
       // Guardar el pedido y notificar antes de redirigir
       try{
-        const productos=cart.map(i=>`${i.name}${i.selectedColor?' ['+i.selectedColor+']':''} x${i.qty} (${fmt(i.price*i.qty)})`).join(' | ');
+        const productos=cart.map(i=>`${labelItem(i)} x${i.qty} (${fmt(i.price*i.qty)})`).join(' | ');
         const subtotal=cart.reduce((s,i)=>s+i.price*i.qty,0);
         const total=subtotal+costoEnvioActual;
         const dirCompleta=d.dirCompleta;
@@ -847,7 +869,7 @@ async function finalizarCompra(){
   const btn=document.querySelector('.ck-btn-contra');
   const txtOrig=btn.textContent;
   btn.textContent='Enviando...';btn.disabled=true;
-  const productos=cart.map(i=>`${i.name}${i.selectedColor?' ['+i.selectedColor+']':''} x${i.qty} (${fmt(i.price*i.qty)})`).join(' | ');
+  const productos=cart.map(i=>`${labelItem(i)} x${i.qty} (${fmt(i.price*i.qty)})`).join(' | ');
   const subtotal=cart.reduce((s,i)=>s+i.price*i.qty,0);
   const total=subtotal+costoEnvioActual;
   const dir2=d.dirCompleta+' | Doc: '+d.docFmt+' | Envío: '+fmt(costoEnvioActual);
@@ -897,7 +919,7 @@ async function pagarConAddi(){
   try{
     const items=cart.map(i=>({
       sku:String(i.id),
-      name:i.name+(i.selectedColor?' ['+i.selectedColor+']':''),
+      name:labelItem(i),
       quantity:i.qty,
       unit_price:i.price,
       pictureUrl:(i.img&&i.img.startsWith('http'))?i.img:'',
@@ -907,7 +929,7 @@ async function pagarConAddi(){
     const total=_subt+costoEnvioActual;
     // Guardar el pedido como pendiente antes de redirigir
     try{
-      const productos=cart.map(i=>`${i.name}${i.selectedColor?' ['+i.selectedColor+']':''} x${i.qty} (${fmt(i.price*i.qty)})`).join(' | ');
+      const productos=cart.map(i=>`${labelItem(i)} x${i.qty} (${fmt(i.price*i.qty)})`).join(' | ');
       const ref=await fdb.collection('pedidos').add({nombre,documento:d.docFmt,telefono:tel,email,direccion:d.dirCompleta,productos,envio:fmt(costoEnvioActual),total:fmt(total),fecha:new Date().toISOString(),estado:'⏳ Addi - sin confirmar',metodoPago:'Addi',orderId});
       try{ localStorage.setItem('ab_pedido_pendiente',ref.id); }catch(e){}
       try{ await fdb.collection('suscriptores').add({email,nombre,origen:'pedido',fecha:new Date().toISOString()}); }catch(e){}
@@ -954,7 +976,7 @@ async function pagarConSistecredito(){
     const total=_subt+costoEnvioActual;
     // Guardar el pedido como pendiente antes de redirigir
     try{
-      const productos=cart.map(i=>`${i.name}${i.selectedColor?' ['+i.selectedColor+']':''} x${i.qty} (${fmt(i.price*i.qty)})`).join(' | ');
+      const productos=cart.map(i=>`${labelItem(i)} x${i.qty} (${fmt(i.price*i.qty)})`).join(' | ');
       const ref=await fdb.collection('pedidos').add({nombre,documento:d.docFmt,telefono:tel,email,direccion:d.dirCompleta,productos,envio:fmt(costoEnvioActual),total:fmt(total),fecha:new Date().toISOString(),estado:'⏳ Sistecrédito - sin confirmar',metodoPago:'Sistecrédito',orderId});
       try{ localStorage.setItem('ab_pedido_pendiente',ref.id); }catch(e){}
       try{ await fdb.collection('suscriptores').add({email,nombre,origen:'pedido',fecha:new Date().toISOString()}); }catch(e){}
@@ -2052,6 +2074,35 @@ function hexValido(h){h=String(h||'');return /^#[0-9a-fA-F]{6}$/.test(h)?h:'#ccc
 // Cuando tocas el selector y eliges un color exacto para ese tono (manda sobre el automático)
 function setColorHex(i,hex){if(coloresProd[i]){coloresProd[i].hex=hex;coloresProd[i].auto=false;const sw=document.querySelector('#colores-elegidos [data-sw="'+i+'"]');if(sw)sw.value=hex;}}
 function syncColorsHidden(){const h=g('f-colors');if(h)h.value=coloresProd.map(c=>c.name).filter(Boolean).join(', ');}
+
+// ══ TAMAÑOS CON PRECIO (ej: 10 ml / 15 ml, el precio cambia) ══
+let tamanosProd=[]; // [{t:'10 ml', p:25000}]
+function renderTamanos(){
+  const cont=g('tamanos-elegidos');if(!cont)return;
+  cont.innerHTML=tamanosProd.map((t,i)=>`<div style="display:flex;align-items:center;gap:8px">
+    <input value="${String(t.t||'').replace(/"/g,'&quot;')}" oninput="setTamano(${i},'t',this.value)" placeholder="Tamaño (ej: 15 ml)" style="flex:1;border:1px solid var(--border);padding:8px 10px;font-size:13px;border-radius:4px;font-family:var(--sans)">
+    <div style="display:flex;align-items:center;gap:4px"><span style="font-size:12px;color:var(--gray)">$</span><input type="number" value="${t.p||''}" oninput="setTamano(${i},'p',this.value)" placeholder="Precio" style="width:110px;border:1px solid var(--border);padding:8px 10px;font-size:13px;border-radius:4px;font-family:var(--sans)"></div>
+    <button type="button" class="act-btn danger" onclick="quitarTamano(${i})" title="Quitar">✕</button></div>`).join('');
+}
+function agregarTamano(){tamanosProd.push({t:'',p:''});renderTamanos();}
+function quitarTamano(i){tamanosProd.splice(i,1);renderTamanos();}
+function setTamano(i,campo,val){if(tamanosProd[i])tamanosProd[i][campo]=val;}
+
+// ══ TIPO DE PRODUCTO (adapta el formulario) ══
+function onTipoProducto(){
+  const tipo=g('f-tipo')?g('f-tipo').value:'Único';
+  const hint=g('tipo-hint');
+  const caja=g('caja-lissia');
+  const msg={
+    'Tintes':'💇 Abajo tienes el cargador de tonos Lissia (con / sin amoníaco).',
+    'Esmaltes':'💅 Usa la paleta de colores de abajo para los tonos del esmalte.',
+    'Único':'',
+    'Otro':''
+  }[tipo]||'';
+  if(hint){ hint.textContent=msg; hint.style.display=msg?'block':'none'; }
+  // Resaltar el cargador de tonos cuando es Tintes (sigue disponible para todos)
+  if(caja){ caja.style.boxShadow=(tipo==='Tintes')?'0 0 0 2px #b5516a':'none'; }
+}
 function renderColoresElegidos(){
   const cont=g('colores-elegidos');if(!cont)return;
   cont.innerHTML=coloresProd.map((c,i)=>`<div style="display:flex;align-items:center;gap:8px"><input type="color" data-sw="${i}" value="${hexValido(c.hex)}" oninput="setColorHex(${i},this.value)" title="Tocar para elegir el color exacto de este tono" style="width:34px;height:34px;min-width:34px;padding:0;border:1px solid rgba(0,0,0,.2);border-radius:6px;cursor:pointer;background:none"><input value="${(c.name||'').replace(/"/g,'&quot;')}" oninput="renombrarColorProd(${i},this.value)" placeholder="Nombre (ej: 01 Light, Marfil, Tono ${i+1})" style="flex:1;border:1px solid var(--border);padding:8px 10px;font-size:13px;border-radius:4px;font-family:var(--sans)"><button type="button" class="act-btn danger" onclick="quitarColorProd(${i})" title="Quitar">✕</button></div>`).join('');
@@ -2151,6 +2202,9 @@ function openModal(id){
   renderPaleta();
   const _pe=id?products.find(x=>x.id===id):null;
   cargarColoresProd(_pe);
+  tamanosProd=(_pe&&Array.isArray(_pe.tamanos))?_pe.tamanos.map(t=>({t:t.t||'',p:t.p||''})):[];
+  renderTamanos();
+  if(g('f-tipo')){g('f-tipo').value=_pe?.tipo||'Único';onTipoProducto();}
   if(g('f-tamano'))g('f-tamano').value=_pe?.tamano||'';
   if(g('f-ficha'))g('f-ficha').value=_pe?.ficha||'';
   g('am-overlay').classList.add('open');
@@ -2208,7 +2262,9 @@ async function saveProduct(){
   const colorsStr=coloresLista.map(c=>c.name).join(', ')||null;
   const tamano=(g('f-tamano')?.value||'').trim()||null;
   const ficha=(g('f-ficha')?.value||'').trim()||null;
-  const d={id:editId||nextId++,name,sku:g('f-sku').value.trim(),brand:g('f-brand').value.trim()||null,cat:g('f-cat').value,subcat:g('f-subcat')?.value||null,price,oldPrice:null,img:finalImg||null,imgs:imgs.length?imgs:null,emoji:selEmoji,badge:g('f-badge').value||null,stock:g('f-stock')?.value||'disponible',cantidad,destacado:g('f-destacado')?.checked||false,stars:g('f-stars').value,desc:g('f-desc').value.trim(),colors:colorsStr,coloresLista:coloresLista.length?coloresLista:null,tamano,ficha,oculto:editId?((products.find(x=>x.id===editId)||{}).oculto||false):false};
+  const tipo=g('f-tipo')?.value||'Único';
+  const tamanos=tamanosProd.map(t=>({t:String(t.t||'').trim(),p:Math.max(0,parseInt(t.p)||0)})).filter(t=>t.t&&t.p>0);
+  const d={id:editId||nextId++,name,sku:g('f-sku').value.trim(),brand:g('f-brand').value.trim()||null,cat:g('f-cat').value,subcat:g('f-subcat')?.value||null,price,oldPrice:null,img:finalImg||null,imgs:imgs.length?imgs:null,emoji:selEmoji,badge:g('f-badge').value||null,stock:g('f-stock')?.value||'disponible',cantidad,destacado:g('f-destacado')?.checked||false,stars:g('f-stars').value,desc:g('f-desc').value.trim(),colors:colorsStr,coloresLista:coloresLista.length?coloresLista:null,tipo,tamanos:tamanos.length?tamanos:null,tamano,ficha,oculto:editId?((products.find(x=>x.id===editId)||{}).oculto||false):false};
   if(editId){const i=products.findIndex(x=>x.id===editId);products[i]=d;showToast('Producto actualizado ✓','success')}
   else{products.push(d);showToast('Producto agregado ✓','success')}
   renderAdminTable();renderStoreGrid(currentCat);updateDash();closeModal();
