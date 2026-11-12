@@ -148,11 +148,9 @@ async function descontarStockPorColor(items) {
             }
           });
         }
-        const conStock = Array.isArray(coloresLista) ? coloresLista.filter(c => c && typeof c.stock === 'number') : [];
+        // El stock global baja por la cantidad vendida (independiente del color)
         const totalQty = lineas.reduce((s, l) => s + (parseInt(l.qty) || 0), 0);
-        if (conStock.length) {
-          cantidad = conStock.reduce((s, c) => s + c.stock, 0);
-        } else if (typeof cantidad === 'number') {
+        if (typeof cantidad === 'number') {
           cantidad = Math.max(0, cantidad - totalQty);
         }
 
