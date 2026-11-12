@@ -95,4 +95,85 @@ async function marcarPedidoPorOrderId(orderId, estado) {
   }
 }
 
-module.exports = { marcarPedidoPorOrderId };
+// ── Conversión de valores Firestore (REST) ↔ JS ──
+function fsDecode(v) {
+  if (v == null) return undefined;
+  if ('stringValue' in v) return v.stringValue;
+  if ('integerValue' in v) return parseInt(v.integerValue);
+  if ('doubleValue' in v) return v.doubleValue;
+  if ('booleanValue' in v) return v.booleanValue;
+  if ('nullValue' in v) return null;
+  if ('arrayValue' in v) return (v.arrayValue.values || []).map(fsDecode);
+  if ('mapValue' in v) { const o = {}; const f = v.mapValue.fields || {}; for (const k in f) o[k] = fsDecode(f[k]); return o; }
+  return undefined;
+}
+function fsEncode(x) {
+  if (x === null || x === undefined) return { nullValue: null };
+  if (typeof x === 'string') return { stringValue: x };
+  if (typeof x === 'boolean') return { booleanValue: x };
+  if (typeof x === 'number') return Number.isInteger(x) ? { integerValue: String(x) } : { doubleValue: x };
+  if (Array.isArray(x)) return { arrayValue: { values: x.map(fsEncode) } };
+  if (typeof x === 'object') { const f = {}; for (const k in x) { if (x[k] !== undefined) f[k] = fsEncode(x[k]); } return { mapValue: { fields: f } }; }
+  return { nullValue: null };
+}
+
+// Descuenta stock por color (y recalcula la cantidad total) con la llave de servicio.
+// items: [{id, color, qty}]
+async function descontarStockPorColor(items) {
+  try {
+    const sa = getSA();
+    if (!sa) return { ok: false, error: 'Falta FIREBASE_SERVICE_ACCOUNT' };
+    const token = await getAccessToken(sa);
+    if (!token) return { ok: false, error: 'No se pudo autenticar con Firebase' };
+
+    const porProd = {};
+    (items || []).forEach(it => { const id = String(it.id); (porProd[id] = porProd[id] || []).push(it); });
+
+    const resultados = [];
+    for (const id of Object.keys(porProd)) {
+      try {
+        const r = await fetch(BASE + '/productos/' + encodeURIComponent(id), { headers: { 'Authorization': 'Bearer ' + token } });
+        if (!r.ok) { resultados.push({ id, ok: false }); continue; }
+        const doc = await r.json();
+        const fields = doc.fields || {};
+        let coloresLista = fsDecode(fields.coloresLista);
+        let cantidad = fsDecode(fields.cantidad);
+        const lineas = porProd[id];
+
+        if (Array.isArray(coloresLista)) {
+          lineas.forEach(l => {
+            if (l.color) {
+              const c = coloresLista.find(x => x && x.name === l.color);
+              if (c && typeof c.stock === 'number') c.stock = Math.max(0, c.stock - (parseInt(l.qty) || 0));
+            }
+          });
+        }
+        const conStock = Array.isArray(coloresLista) ? coloresLista.filter(c => c && typeof c.stock === 'number') : [];
+        const totalQty = lineas.reduce((s, l) => s + (parseInt(l.qty) || 0), 0);
+        if (conStock.length) {
+          cantidad = conStock.reduce((s, c) => s + c.stock, 0);
+        } else if (typeof cantidad === 'number') {
+          cantidad = Math.max(0, cantidad - totalQty);
+        }
+
+        const bodyFields = {}; const mask = [];
+        if (Array.isArray(coloresLista)) { bodyFields.coloresLista = fsEncode(coloresLista); mask.push('coloresLista'); }
+        if (typeof cantidad === 'number') { bodyFields.cantidad = fsEncode(cantidad); mask.push('cantidad'); }
+        if (mask.length) {
+          const qs = mask.map(m => 'updateMask.fieldPaths=' + m).join('&');
+          const pr = await fetch(BASE + '/productos/' + encodeURIComponent(id) + '?' + qs, {
+            method: 'PATCH',
+            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fields: bodyFields })
+          });
+          resultados.push({ id, ok: pr.ok });
+        }
+      } catch (e) { resultados.push({ id, ok: false, error: e.message }); }
+    }
+    return { ok: true, resultados };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+module.exports = { marcarPedidoPorOrderId, descontarStockPorColor };
