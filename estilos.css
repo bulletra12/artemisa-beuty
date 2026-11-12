@@ -256,8 +256,8 @@ select.ck-input{cursor:pointer;appearance:none;background-image:url("data:image/
 .pay-img img{height:60px;width:auto;max-width:100%;display:block;object-fit:contain;border-radius:12px}
 .pay-img:hover{filter:none;transform:translateY(-2px)}
 /* Botones de pago minimalistas (texto) */
-.checkout-btn.pb-min{background:#fff;color:var(--black);border:1px solid var(--border);border-radius:13px;display:flex;align-items:center;gap:13px;text-align:left;padding:13px 16px;text-transform:none;letter-spacing:0;font-weight:500}
-.checkout-btn.pb-min:hover{filter:none;border-color:var(--primary);background:#fffafb}
+.checkout-btn.pb-min{background:#fff;color:var(--black);border:1.5px solid var(--border);border-radius:13px;display:flex;align-items:center;gap:13px;text-align:left;padding:13px 16px;text-transform:none;letter-spacing:0;font-weight:500}
+.checkout-btn.pb-min:hover{filter:none;background:#fafafa}
 .pb-min .pb-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .pb-min .pb-txt{display:flex;flex-direction:column;line-height:1.25}
 .pb-min .pb-main{font-size:14px;font-weight:600}

@@ -61,7 +61,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<link rel="stylesheet" href="estilos.css?v=42">
+<link rel="stylesheet" href="estilos.css?v=43">
 </head>
 <body>
 <div id="store">
@@ -465,10 +465,10 @@
         <span>Acepto los <a href="#" onclick="abrirPolitica('terminos');return false" style="color:var(--primary);font-weight:600">términos y condiciones</a> y la <a href="#" onclick="abrirPolitica('privacidad');return false" style="color:var(--primary);font-weight:600">política de privacidad</a>.</span>
       </label>
       <div class="ck-pagos">
-        <button class="checkout-btn pb-min ck-btn-mp" onclick="pagarConMercadoPago()"><span class="pb-dot" style="background:#009ee3"></span><span class="pb-txt"><span class="pb-main">Pagar en línea</span><span class="pb-sub">Tarjeta · PSE · Nequi</span></span></button>
-        <button class="checkout-btn pb-min ck-btn-addi" onclick="pagarConAddi()"><span class="pb-dot" style="background:#1f35ff"></span><span class="pb-txt"><span class="pb-main">Paga a cuotas con Addi</span><span class="pb-sub">Sin tarjeta de crédito</span></span></button>
-        <button class="checkout-btn pb-min ck-btn-siste" onclick="pagarConSistecredito()"><span class="pb-dot" style="background:#39a935"></span><span class="pb-txt"><span class="pb-main">Paga a cuotas con Sistecrédito</span><span class="pb-sub">Sin tarjeta de crédito</span></span></button>
-        <button class="checkout-btn pb-min ck-btn-contra" onclick="finalizarCompra()"><span class="pb-dot" style="background:#b5516a"></span><span class="pb-txt"><span class="pb-main">Pago contra entrega</span><span class="pb-sub">Pagas al recibir en casa</span></span></button>
+        <button class="checkout-btn pb-min ck-btn-mp" onclick="pagarConMercadoPago()" style="border-color:#009ee3"><span class="pb-dot" style="background:#009ee3"></span><span class="pb-txt"><span class="pb-main">Pagar en línea</span><span class="pb-sub">Tarjeta · PSE · Nequi</span></span></button>
+        <button class="checkout-btn pb-min ck-btn-addi" onclick="pagarConAddi()" style="border-color:#1f35ff"><span class="pb-dot" style="background:#1f35ff"></span><span class="pb-txt"><span class="pb-main">Paga a cuotas con Addi</span><span class="pb-sub">A cuotas o con PSE</span></span></button>
+        <button class="checkout-btn pb-min ck-btn-siste" onclick="pagarConSistecredito()" style="border-color:#39a935"><span class="pb-dot" style="background:#39a935"></span><span class="pb-txt"><span class="pb-main">Paga a cuotas con Sistecrédito</span><span class="pb-sub">Sin tarjeta de crédito</span></span></button>
+        <button class="checkout-btn pb-min ck-btn-contra" onclick="finalizarCompra()" style="border-color:#b5516a"><span class="pb-dot" style="background:#b5516a"></span><span class="pb-txt"><span class="pb-main">Pago contra entrega</span><span class="pb-sub">Pagas al recibir en casa</span></span></button>
       </div>
       <p class="ck-nota-seg">🔒 Tus datos están seguros y solo se usan para gestionar tu pedido.</p>
     </div>
@@ -491,7 +491,7 @@
 
 </div><!-- /store -->
 <div class="toast" id="toast"></div>
-<script src="app.js?v=42"></script>
+<script src="app.js?v=43"></script>
 <!-- Widget de Addi (muestra "paga desde $X al mes" en la ficha del producto) -->
 <script src="https://s3.amazonaws.com/widgets.addi.com/bundle.min.js" async></script>
 <!-- Vercel Analytics (visitas, de dónde vienen, productos más vistos) -->
