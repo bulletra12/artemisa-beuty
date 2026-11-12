@@ -795,8 +795,7 @@ async function pagarConMercadoPago(){
   const btns=document.querySelectorAll('.ck-pagos .checkout-btn');
   btns.forEach(b=>b.disabled=true);
   const btnMP=document.querySelector('.ck-btn-mp');
-  const txtOrig=btnMP.textContent;
-  btnMP.textContent='Conectando con Mercado Pago...';
+  btnMP.classList.add('loading');
   try{
     const items=cart.map(i=>({
       title:labelItem(i),
@@ -834,11 +833,11 @@ async function pagarConMercadoPago(){
       window.location.href=url; // Redirige a Mercado Pago
     }else{
       showToast('No se pudo iniciar el pago. Intenta de nuevo.','error');
-      btnMP.textContent=txtOrig;btns.forEach(b=>b.disabled=false);
+      btnMP.classList.remove('loading');btns.forEach(b=>b.disabled=false);
     }
   }catch(e){
     showToast('Error al conectar con el pago','error');
-    btnMP.textContent=txtOrig;btns.forEach(b=>b.disabled=false);
+    btnMP.classList.remove('loading');btns.forEach(b=>b.disabled=false);
   }
 }
 
@@ -867,8 +866,7 @@ async function finalizarCompra(){
   if(!depto && !_gratis){showToast('Elige tu departamento para calcular el envío','error');return}
   if(!cart.length){showToast('El carrito está vacío','error');return}
   const btn=document.querySelector('.ck-btn-contra');
-  const txtOrig=btn.textContent;
-  btn.textContent='Enviando...';btn.disabled=true;
+  btn.classList.add('loading');btn.disabled=true;
   const productos=cart.map(i=>`${labelItem(i)} x${i.qty} (${fmt(i.price*i.qty)})`).join(' | ');
   const subtotal=cart.reduce((s,i)=>s+i.price*i.qty,0);
   const total=subtotal+costoEnvioActual;
@@ -897,7 +895,7 @@ async function finalizarCompra(){
   }catch(e){
     showToast('Error al enviar pedido. Intenta de nuevo.','error');
   }
-  btn.textContent=txtOrig;btn.disabled=false;
+  btn.classList.remove('loading');btn.disabled=false;
 }
 
 // ══ PAGO CON ADDI (cuotas) ══
@@ -913,8 +911,7 @@ async function pagarConAddi(){
   if(!depto && !_gratis){showToast('Elige tu departamento para calcular el envío','error');return}
   if(!email||email.indexOf('@')<0){showToast('Ingresa un correo válido','error');return}
   const btn=document.querySelector('.ck-btn-addi');
-  const txtOrig=btn.textContent;
-  btn.textContent='Conectando con Addi...';
+  btn.classList.add('loading');
   const btns=document.querySelectorAll('.ck-pagos .checkout-btn');btns.forEach(b=>b.disabled=true);
   try{
     const items=cart.map(i=>({
@@ -946,11 +943,11 @@ async function pagarConAddi(){
     }else{
       showToast('Addi no está disponible en este momento. Intenta con otro método.','error');
       console.error('Addi:',data);
-      btn.textContent=txtOrig;btns.forEach(b=>b.disabled=false);
+      btn.classList.remove('loading');btns.forEach(b=>b.disabled=false);
     }
   }catch(e){
     showToast('Error al conectar con Addi','error');
-    btn.textContent=txtOrig;btns.forEach(b=>b.disabled=false);
+    btn.classList.remove('loading');btns.forEach(b=>b.disabled=false);
   }
 }
 
@@ -967,10 +964,9 @@ async function pagarConSistecredito(){
   if(!depto && !_gratis){showToast('Elige tu departamento para calcular el envío','error');return}
   if(!email||email.indexOf('@')<0){showToast('Ingresa un correo válido','error');return}
   const btn=document.querySelector('.ck-btn-siste');
-  const txtOrig=btn?btn.textContent:'';
-  if(btn)btn.textContent='Conectando con Sistecrédito...';
+  if(btn)btn.classList.add('loading');
   const btns=document.querySelectorAll('.ck-pagos .checkout-btn');btns.forEach(b=>b.disabled=true);
-  const restaurar=()=>{ if(btn)btn.textContent=txtOrig; btns.forEach(b=>b.disabled=false); };
+  const restaurar=()=>{ if(btn)btn.classList.remove('loading'); btns.forEach(b=>b.disabled=false); };
   try{
     const orderId='AB-'+Date.now();
     const total=_subt+costoEnvioActual;
@@ -993,7 +989,7 @@ async function pagarConSistecredito(){
       console.error('Sistecrédito:',data); restaurar(); return;
     }
     // El link aún no está listo: consultamos el estado unos segundos
-    if(btn)btn.textContent='Preparando tu crédito...';
+    // (el botón sigue mostrando "Procesando…")
     const idTx=data.transactionId;
     for(let i=0;i<14;i++){
       await new Promise(r=>setTimeout(r,1500));

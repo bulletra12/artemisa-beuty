@@ -245,10 +245,17 @@ select.ck-input{cursor:pointer;appearance:none;background-image:url("data:image/
 .ck-resumen{background:var(--primary-light);border-radius:12px;padding:16px 18px;margin:18px 0}
 .ck-resumen .cart-row{color:var(--primary-dark)}
 .ck-resumen .cart-row.total{color:var(--primary-dark);border-top-color:rgba(138,58,80,.2)}
-.ck-pagos{display:flex;flex-direction:column;gap:9px}
+.ck-pagos{display:flex;flex-direction:column;gap:10px}
 .ck-btn-mp{background:#009ee3}
 .ck-btn-contra{background:var(--primary)}
 .ck-btn-contra:hover{background:var(--primary-dark)}
+/* Botones de pago con imagen */
+.pay-img{padding:0!important;border:none!important;background:none!important;width:100%;position:relative;cursor:pointer;line-height:0;border-radius:16px;overflow:hidden;transition:transform .15s,box-shadow .2s}
+.pay-img img{width:100%;height:auto;display:block;border-radius:16px}
+.pay-img:hover{filter:none;transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.14)}
+.checkout-btn.loading{pointer-events:none}
+.checkout-btn.loading::after{content:'Procesando…';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.85);color:#1a1a1a;font-family:var(--sans);font-size:14px;font-weight:600;letter-spacing:.03em;border-radius:16px}
+.checkout-btn:disabled{opacity:.55}
 .ck-nota-seg{text-align:center;font-size:11px;color:var(--gray);margin-top:12px}
 @media(max-width:480px){.ck-overlay{padding:0}.ck-modal{max-width:100%;min-height:100%;border-radius:0}.ck-grid{grid-template-columns:1fr}}
 
