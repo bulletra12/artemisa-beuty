@@ -966,7 +966,7 @@ async function pagarConSistecredito(){
     const data=await res.json();
     if(data.url){ window.location.href=data.url; return; }
     if(!data.transactionId){
-      showToast('Sistecrédito no está disponible en este momento. Intenta con otro método.','error');
+      alert('⚠️ Diagnóstico Sistecrédito\n\n'+(data.error||'sin mensaje')+'\n\nHTTP: '+(data.status||'?')+'\n'+(data.estado?('Estado: '+data.estado+'\n'):'')+(data.detalle?('Detalle: '+JSON.stringify(data.detalle).slice(0,350)):''));
       console.error('Sistecrédito:',data); restaurar(); return;
     }
     // El link aún no está listo: consultamos el estado unos segundos
