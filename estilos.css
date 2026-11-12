@@ -219,7 +219,7 @@ footer{background:var(--black);color:rgba(255,255,255,.6);padding:60px 40px 30px
 .cart-totals{margin-bottom:16px}
 .cart-row{display:flex;justify-content:space-between;font-size:13px;color:var(--gray);margin-bottom:6px}
 .cart-row.total{font-size:16px;font-weight:700;color:var(--black);margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
-.checkout-btn{width:100%;padding:16px;background:var(--black);color:#fff;border:none;cursor:pointer;font-family:var(--sans);font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;transition:background .2s}
+.checkout-btn{width:100%;padding:16px;background:var(--black);color:#fff;border:none;cursor:pointer;font-family:var(--sans);font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;transition:background .2s;position:relative}
 .checkout-btn:hover{filter:brightness(.92)}
 /* ── CHECKOUT MODAL (datos del cliente) ── */
 .ck-overlay{display:none;position:fixed;inset:0;background:rgba(26,26,26,.55);backdrop-filter:blur(4px);z-index:700;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto}

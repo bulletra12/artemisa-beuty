@@ -2506,6 +2506,64 @@ function subirFotoHero(input){
   });
 }
 
+// ══ IMÁGENES DE LOS BOTONES DE PAGO (las sube el admin desde el panel) ══
+let _botonesPago={};
+const BTN_PAGO_FALLBACK={
+  mp:{sel:'.ck-btn-mp',txt:'💳 Pagar en línea (tarjeta, PSE, Nequi)',bg:'#009ee3'},
+  addi:{sel:'.ck-btn-addi',txt:'🟢 Paga a cuotas con Addi (sin tarjeta)',bg:'#16b364'},
+  siste:{sel:'.ck-btn-siste',txt:'🟣 Paga a cuotas con Sistecrédito (sin tarjeta)',bg:'#0a7d78'},
+  contra:{sel:'.ck-btn-contra',txt:'📲 Pedir y pagar al recibir (WhatsApp)',bg:'var(--primary)'}
+};
+function aplicarBotonesPago(d){
+  d=d||{};
+  for(const k in BTN_PAGO_FALLBACK){
+    const f=BTN_PAGO_FALLBACK[k];
+    const btn=document.querySelector(f.sel); if(!btn)continue;
+    if(d[k]){
+      btn.classList.add('pay-img'); btn.style.background='none';
+      btn.innerHTML='<img src="'+d[k]+'" alt="'+f.txt+'">';
+    }else{
+      btn.classList.remove('pay-img'); btn.style.background=f.bg; btn.textContent=f.txt;
+    }
+  }
+}
+function subirBotonPago(k,input){
+  const file=input.files[0];if(!file)return;
+  comprimirImagen(file,1000,0.85).then(async b64=>{
+    if(!b64){showToast('No se pudo procesar la imagen','error');return}
+    _botonesPago[k]=b64;
+    renderPreviewBotones(); aplicarBotonesPago(_botonesPago);
+    try{
+      const d=await fdb.collection('config').doc('botonesPago').get();
+      const existing=d.exists?d.data():{};
+      await fdb.collection('config').doc('botonesPago').set({...existing,[k]:b64});
+      showToast('Botón guardado ✓','success');
+    }catch(e){showToast('Imagen muy grande, prueba otra','error')}
+  });
+}
+function quitarBotonPago(k){
+  delete _botonesPago[k];
+  renderPreviewBotones(); aplicarBotonesPago(_botonesPago);
+  fdb.collection('config').doc('botonesPago').set({..._botonesPago}).catch(()=>{});
+  showToast('Botón quitado','success');
+}
+function renderPreviewBotones(){
+  for(const k in BTN_PAGO_FALLBACK){
+    const img=g('prev-btn-'+k), quit=g('quit-btn-'+k);
+    if(img){ if(_botonesPago[k]){img.src=_botonesPago[k];img.style.display='block';} else {img.style.display='none';} }
+    if(quit) quit.style.display=_botonesPago[k]?'inline-block':'none';
+  }
+}
+async function cargarBotonesPago(){
+  try{
+    const d=await fdb.collection('config').doc('botonesPago').get();
+    const data=d.exists?d.data():{};
+    _botonesPago={...data};
+    aplicarBotonesPago(data);
+    renderPreviewBotones();
+  }catch(e){ console.error('botonesPago:',e); }
+}
+
 async function cargarHeroMediaFirebase(){
   try{
     const doc = await fdb.collection('config').doc('heroMedia').get();
@@ -3589,6 +3647,7 @@ cargarColoresFirebase();
 cargarReviewsFirebase();
 cargarEnviosFirebase();
 cargarCategoriasFirebase();
+cargarBotonesPago();
 cargarComentarios();
 activarLivePreview();
 activarReveal();

@@ -12,7 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<link rel="stylesheet" href="estilos.css?v=39">
+<link rel="stylesheet" href="estilos.css?v=40">
 </head>
 <body>
 <div id="login-screen" style="display:flex">
@@ -465,6 +465,37 @@
             <div id="cfg-envios-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:16px"></div>
             <button class="a-btn" onclick="guardarEnviosFirebase()">💾 Guardar costos de envío</button>
           </div>
+          <div class="config-card" style="grid-column:1/-1">
+            <h4>🖼️ Imágenes de los botones de pago</h4>
+            <p style="font-size:12px;color:var(--gray);margin-bottom:6px">Sube tu imagen para cada botón del checkout. Si no subes ninguna, el botón se muestra con texto (como ahora).</p>
+            <p style="font-size:12px;color:#8a5a66;margin-bottom:14px"><b>Medida ideal:</b> ancho 1000px × alto ~320px (proporción 3:1), con <b>fondo blanco</b> (no gris ni transparente) para que se vea limpio sobre el checkout.</p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px">
+              <div style="border:1px solid var(--border);border-radius:8px;padding:12px">
+                <div style="font-weight:600;font-size:13px;margin-bottom:8px">💳 Mercado Pago</div>
+                <img id="prev-btn-mp" style="display:none;width:100%;border-radius:8px;margin-bottom:8px">
+                <input type="file" accept="image/*" onchange="subirBotonPago('mp',this)" style="font-size:12px;width:100%">
+                <button id="quit-btn-mp" class="act-btn danger" onclick="quitarBotonPago('mp')" style="display:none;margin-top:8px">Quitar</button>
+              </div>
+              <div style="border:1px solid var(--border);border-radius:8px;padding:12px">
+                <div style="font-weight:600;font-size:13px;margin-bottom:8px">🟢 Addi</div>
+                <img id="prev-btn-addi" style="display:none;width:100%;border-radius:8px;margin-bottom:8px">
+                <input type="file" accept="image/*" onchange="subirBotonPago('addi',this)" style="font-size:12px;width:100%">
+                <button id="quit-btn-addi" class="act-btn danger" onclick="quitarBotonPago('addi')" style="display:none;margin-top:8px">Quitar</button>
+              </div>
+              <div style="border:1px solid var(--border);border-radius:8px;padding:12px">
+                <div style="font-weight:600;font-size:13px;margin-bottom:8px">🟣 Sistecrédito</div>
+                <img id="prev-btn-siste" style="display:none;width:100%;border-radius:8px;margin-bottom:8px">
+                <input type="file" accept="image/*" onchange="subirBotonPago('siste',this)" style="font-size:12px;width:100%">
+                <button id="quit-btn-siste" class="act-btn danger" onclick="quitarBotonPago('siste')" style="display:none;margin-top:8px">Quitar</button>
+              </div>
+              <div style="border:1px solid var(--border);border-radius:8px;padding:12px">
+                <div style="font-weight:600;font-size:13px;margin-bottom:8px">📲 Contra entrega</div>
+                <img id="prev-btn-contra" style="display:none;width:100%;border-radius:8px;margin-bottom:8px">
+                <input type="file" accept="image/*" onchange="subirBotonPago('contra',this)" style="font-size:12px;width:100%">
+                <button id="quit-btn-contra" class="act-btn danger" onclick="quitarBotonPago('contra')" style="display:none;margin-top:8px">Quitar</button>
+              </div>
+            </div>
+          </div>
           <div class="config-card">
             <h4>📱 Redes sociales</h4>
             <div class="ff"><label>Instagram</label><input value="@artemisabeauty"></div>
@@ -689,6 +720,6 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="app.js?v=39"></script>
+<script src="app.js?v=40"></script>
 </body>
 </html>
