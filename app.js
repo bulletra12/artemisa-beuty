@@ -785,9 +785,10 @@ async function pagarConMercadoPago(){
     if(costoEnvioActual>0){
       items.push({title:'Envío ('+depto+')',quantity:1,unit_price:costoEnvioActual});
     }
+    const orderId='AB-'+Date.now();
     const res=await fetch('/api/crear-pago',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({items,comprador:{nombre,email,telefono:tel}})
+      body:JSON.stringify({items,comprador:{nombre,email,telefono:tel},orderId})
     });
     const data=await res.json();
     const url=data.init_point||data.sandbox_init_point;
@@ -798,7 +799,7 @@ async function pagarConMercadoPago(){
         const subtotal=cart.reduce((s,i)=>s+i.price*i.qty,0);
         const total=subtotal+costoEnvioActual;
         const dirCompleta=d.dirCompleta;
-        const ref=await fdb.collection('pedidos').add({nombre,documento:d.docFmt,telefono:tel,email,direccion:dirCompleta,productos,envio:fmt(costoEnvioActual),total:fmt(total),fecha:new Date().toISOString(),estado:'⏳ Pago sin confirmar',metodoPago:'Mercado Pago'});
+        const ref=await fdb.collection('pedidos').add({nombre,documento:d.docFmt,telefono:tel,email,direccion:dirCompleta,productos,envio:fmt(costoEnvioActual),total:fmt(total),fecha:new Date().toISOString(),estado:'⏳ Pago sin confirmar',metodoPago:'Mercado Pago',orderId});
         // Guardar el ID del pedido para marcarlo PAGADO cuando vuelva aprobado
         try{ localStorage.setItem('ab_pedido_pendiente',ref.id); }catch(e){}
         // Guardar correo en suscriptores
@@ -2866,12 +2867,13 @@ function renderPedidos(){
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
               <span style="font-size:12px;color:var(--gray)">📅 ${p.fecha?new Date(p.fecha).toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'-'}</span>
               <span style="font-weight:700;font-size:15px;color:var(--primary)">${p.total||'-'}</span>
-              ${(()=>{const m=p.metodoPago||'Contraentrega';const c=m==='Mercado Pago'?'#009ee3':m==='Addi'?'#16b364':'#8a3a50';const ic=m==='Mercado Pago'?'💳':m==='Addi'?'🟢':'💵';return `<span style="font-size:11px;font-weight:600;background:${c};color:#fff;padding:3px 10px;border-radius:12px">${ic} ${m}</span>`;})()}
+              ${(()=>{const m=p.metodoPago||'Contraentrega';const c=m==='Mercado Pago'?'#009ee3':m==='Addi'?'#16b364':m==='Sistecrédito'?'#0a7d78':'#8a3a50';const ic=m==='Mercado Pago'?'💳':m==='Addi'?'🟢':m==='Sistecrédito'?'🟣':'💵';return `<span style="font-size:11px;font-weight:600;background:${c};color:#fff;padding:3px 10px;border-radius:12px">${ic} ${m}</span>`;})()}
               ${(()=>{const e=p.estado||'';if(/PAGADO/i.test(e))return '<span style="font-size:11px;font-weight:600;background:#eafbf0;color:#276749;padding:3px 10px;border-radius:12px;border:1px solid #bfe9cf">✓ Pagado</span>';if(/rechaz/i.test(e))return '<span style="font-size:11px;font-weight:600;background:#fff0f0;color:#c0392b;padding:3px 10px;border-radius:12px;border:1px solid #f3c0c0">✗ Pago rechazado</span>';if(/sin confirmar/i.test(e))return '<span style="font-size:11px;font-weight:600;background:#fff5e0;color:#b7791f;padding:3px 10px;border-radius:12px;border:1px solid #f0d9a0">⏳ Pago sin confirmar</span>';return '';})()}
             </div>
             <div style="display:flex;align-items:center;gap:8px">
               <select onchange="cambiarEstadoPedido('${p.id}',this.value)" style="font-size:12px;border:1px solid var(--border);padding:5px 8px;border-radius:4px;font-family:var(--sans);outline:none;background:#fff;cursor:pointer">
                 <option value="⏳ Pendiente" ${(p.estado||'⏳ Pendiente')==='⏳ Pendiente'?'selected':''}>⏳ Pendiente</option>
+                <option value="✅ PAGADO" ${/PAGADO/i.test(p.estado||'')?'selected':''}>✅ Pagado</option>
                 <option value="📦 Enviado" ${p.estado==='📦 Enviado'?'selected':''}>📦 Enviado</option>
                 <option value="✅ Recibido" ${p.estado==='✅ Recibido'?'selected':''}>✅ Recibido</option>
                 <option value="❌ Cancelado" ${p.estado==='❌ Cancelado'?'selected':''}>❌ Cancelado</option>
