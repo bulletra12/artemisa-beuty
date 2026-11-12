@@ -851,7 +851,8 @@ async function pagarConMercadoPago(){
 
 // Descuenta las unidades vendidas del inventario y marca agotado al llegar a 0
 async function descontarStock(){
-  // 1) Actualización optimista local (la tienda refleja al instante)
+  // Baja el COLOR comprado y el STOCK GLOBAL (números independientes).
+  // 1) Optimista local (la tienda refleja al instante)
   cart.forEach(i=>{
     const p=products.find(x=>String(x.id)===String(i.id));
     if(!p)return;
@@ -859,11 +860,9 @@ async function descontarStock(){
       const c=p.coloresLista.find(x=>x && x.name===i.selectedColor);
       if(c && typeof c.stock==='number') c.stock=Math.max(0,c.stock-i.qty);
     }
-    const conStock=Array.isArray(p.coloresLista)?p.coloresLista.filter(c=>c&&typeof c.stock==='number'):[];
-    if(conStock.length){ p.cantidad=conStock.reduce((s,c)=>s+c.stock,0); }
-    else if(typeof p.cantidad==='number'){ p.cantidad=Math.max(0,p.cantidad-i.qty); }
+    if(typeof p.cantidad==='number') p.cantidad=Math.max(0,p.cantidad-i.qty);
   });
-  // 2) Descuento autoritativo en el servidor (por color + total), con la llave de servicio
+  // 2) Autoritativo en el servidor (color + global), con la llave de servicio
   try{
     const items=cart.map(i=>({id:i.id,color:i.selectedColor||null,qty:i.qty}));
     await fetch('/api/descontar-stock',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
@@ -2123,12 +2122,6 @@ function setColorStock(i,val){
   if(!coloresProd[i])return;
   const v=String(val).trim();
   coloresProd[i].stock=(v==='')?undefined:Math.max(0,parseInt(v)||0);
-  actualizarTotalPorColor();
-}
-// Si algún color tiene stock, el total del producto = suma de los colores (se refleja en vivo)
-function actualizarTotalPorColor(){
-  const conStock=coloresProd.filter(c=>typeof c.stock==='number');
-  if(conStock.length && g('f-cantidad')){ g('f-cantidad').value=conStock.reduce((s,c)=>s+c.stock,0); }
 }
 // Toma el texto pegado del proveedor y lo organiza: un dato limpio por línea, sin basura ni repetidos.
 function organizarFicha(){
@@ -2271,11 +2264,9 @@ async function saveProduct(){
   if(!name||!price){showToast('Completa nombre y precio','error');return}
   let finalImg=photoMode==='url'?g('url-input').value.trim():photoMode==='file'?currentImg:null;
   const _cantRaw=g('f-cantidad')?g('f-cantidad').value.trim():'';
-  // ¿Hay stock por color? Entonces el total = suma de los colores (no se pide el campo).
-  const _tieneStockColor=coloresProd.some(c=>typeof c.stock==='number' && (c.name||'').trim());
-  // Unidades en stock: obligatorio (salvo que uses stock por color)
-  if(_cantRaw==='' && !_tieneStockColor){showToast('Pon las unidades en stock (o usa el stock por color)','error');if(g('f-cantidad'))g('f-cantidad').focus();return}
-  let cantidad=Math.max(0,parseInt(_cantRaw)||0);
+  // Unidades en stock: obligatorio
+  if(_cantRaw===''){showToast('Pon las unidades en stock (campo obligatorio)','error');if(g('f-cantidad'))g('f-cantidad').focus();return}
+  const cantidad=Math.max(0,parseInt(_cantRaw)||0);
   // Galería: foto principal + fotos extra (una URL por línea)
   const extra=(g('f-imgs-extra')?g('f-imgs-extra').value:'').split(/[\n|]+/).map(s=>s.trim()).filter(Boolean);
   // Si no hay foto principal pero sí hay "más fotos", usa la primera como portada
@@ -2283,9 +2274,6 @@ async function saveProduct(){
   const imgs=[...new Set([finalImg,...extra].filter(Boolean))];
   // Colores estructurados (paleta + nombre), tamaño y ficha técnica
   const coloresLista=coloresProd.map(c=>{const o={name:(c.name||'').trim(),hex:c.hex};if(typeof c.stock==='number')o.stock=c.stock;return o;}).filter(c=>c.name);
-  // Si hay stock por color, el total del producto = suma de los colores
-  const _conStock=coloresLista.filter(c=>typeof c.stock==='number');
-  if(_conStock.length){ cantidad=_conStock.reduce((s,c)=>s+c.stock,0); if(g('f-cantidad'))g('f-cantidad').value=cantidad; }
   const colorsStr=coloresLista.map(c=>c.name).join(', ')||null;
   const tamano=(g('f-tamano')?.value||'').trim()||null;
   const ficha=(g('f-ficha')?.value||'').trim()||null;
@@ -2540,14 +2528,11 @@ function subirFotoHero(input){
 // ══ IMÁGENES DE LOS BOTONES DE PAGO (las sube el admin desde el panel) ══
 let _botonesPago={};
 const BTN_PAGO_FALLBACK={
-  mp:{sel:'.ck-btn-mp',title:'Pagar en línea',sub:'Tarjeta · PSE · Nequi',color:'#009ee3'},
-  addi:{sel:'.ck-btn-addi',title:'Paga a cuotas con Addi',sub:'A cuotas o con PSE',color:'#1f35ff'},
-  siste:{sel:'.ck-btn-siste',title:'Paga a cuotas con Sistecrédito',sub:'Sin tarjeta de crédito',color:'#39a935'},
-  contra:{sel:'.ck-btn-contra',title:'Pago contra entrega',sub:'Pagas al recibir en casa',color:'#b5516a'}
+  mp:{sel:'.ck-btn-mp',txt:'💳 Paga con Mercado Pago · Tarjeta, PSE, Nequi',bg:'#009ee3'},
+  addi:{sel:'.ck-btn-addi',txt:'🔵 Paga a cuotas con Addi o PSE',bg:'#1f35ff'},
+  siste:{sel:'.ck-btn-siste',txt:'🟢 Paga a cuotas con Sistecrédito',bg:'#39a935'},
+  contra:{sel:'.ck-btn-contra',txt:'📲 Pago contra entrega',bg:'var(--primary)'}
 };
-function htmlBotonMin(f){
-  return '<span class="pb-dot" style="background:'+f.color+'"></span><span class="pb-txt"><span class="pb-main">'+f.title+'</span><span class="pb-sub">'+f.sub+'</span></span>';
-}
 function aplicarBotonesPago(d){
   d=d||{};
   for(const k in BTN_PAGO_FALLBACK){
@@ -2555,10 +2540,10 @@ function aplicarBotonesPago(d){
     const btn=document.querySelector(f.sel); if(!btn)continue;
     if(d[k]){
       btn.classList.add('pay-img'); btn.classList.remove('pb-min'); btn.style.background='none'; btn.style.borderColor='';
-      btn.innerHTML='<img src="'+d[k]+'" alt="'+f.title+'">';
+      btn.innerHTML='<img src="'+d[k]+'" alt="'+f.txt+'">';
     }else{
-      btn.classList.remove('pay-img'); btn.classList.add('pb-min'); btn.style.background=''; btn.style.borderColor=f.color;
-      btn.innerHTML=htmlBotonMin(f);
+      btn.classList.remove('pay-img'); btn.classList.remove('pb-min'); btn.style.borderColor=''; btn.style.background=f.bg;
+      btn.textContent=f.txt;
     }
   }
 }
