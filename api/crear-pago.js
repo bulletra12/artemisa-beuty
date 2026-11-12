@@ -9,7 +9,7 @@ module.exports = async function handler(req, res) {
     const accessToken = process.env.MP_ACCESS_TOKEN;
     if (!accessToken) return res.status(200).json({ error: 'Sin Access Token de Mercado Pago' });
 
-    const { items, comprador } = req.body || {};
+    const { items, comprador, orderId } = req.body || {};
     if (!items || !items.length) return res.status(400).json({ error: 'Carrito vacío' });
 
     // Armar los items para Mercado Pago
@@ -31,7 +31,9 @@ module.exports = async function handler(req, res) {
         pending: baseUrl + '/?pago=pendiente'
       },
       auto_return: 'approved',
-      statement_descriptor: 'ARTEMISA BEAUTY'
+      statement_descriptor: 'ARTEMISA BEAUTY',
+      external_reference: String(orderId || ''),
+      notification_url: baseUrl + '/api/mp-webhook'
     };
 
     // Datos del comprador (opcional)

@@ -9,6 +9,9 @@
 //   ADDI_WEBHOOK_PASS
 //
 // Estados posibles que envía Addi: approved | rejected | declined | abandoned
+// Además, marca el pedido en el panel (Pagado / Cancelado).
+
+const { marcarPedidoPorOrderId } = require('./_firestore');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
@@ -28,10 +31,21 @@ module.exports = async function handler(req, res) {
 
     // 2) Leer el body (el estado de la transacción)
     const data = req.body || {};
-    // Addi envía status, orderId, approvedAmount, etc.  Lo registramos en los logs de Vercel.
     console.log('[ADDI callback]', JSON.stringify(data));
 
-    // 3) Responder 200 con EXACTAMENTE el mismo body recibido (obligatorio para Addi)
+    const estado = String(data.status || data.applicationStatus || data.transactionStatus || '').toLowerCase();
+    const orderId = data.orderId || data.order_id || '';
+
+    // 3) Marcar el pedido en el panel (pedido con orderId == orderId)
+    if (orderId) {
+      if (estado.includes('approved')) {
+        await marcarPedidoPorOrderId(orderId, '✅ PAGADO (Addi)');
+      } else if (estado.includes('rejected') || estado.includes('declined') || estado.includes('abandoned') || estado.includes('cancel')) {
+        await marcarPedidoPorOrderId(orderId, '❌ Addi cancelado');
+      }
+    }
+
+    // 4) Responder 200 con EXACTAMENTE el mismo body recibido (obligatorio para Addi)
     return res.status(200).json(data);
   } catch (err) {
     return res.status(500).json({ error: err.message });
