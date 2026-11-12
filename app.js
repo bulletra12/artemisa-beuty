@@ -966,7 +966,7 @@ async function pagarConSistecredito(){
     const data=await res.json();
     if(data.url){ window.location.href=data.url; return; }
     if(!data.transactionId){
-      alert('⚠️ Diagnóstico Sistecrédito\n\n'+(data.error||'sin mensaje')+'\n\nHTTP: '+(data.status||'?')+'\n'+(data.estado?('Estado: '+data.estado+'\n'):'')+(data.detalle?('Detalle: '+JSON.stringify(data.detalle).slice(0,350)):''));
+      showToast('Sistecrédito no está disponible en este momento. Intenta con otro método.','error');
       console.error('Sistecrédito:',data); restaurar(); return;
     }
     // El link aún no está listo: consultamos el estado unos segundos
@@ -3251,6 +3251,29 @@ function checkPagoRetorno(){
     }else{
       setTimeout(()=>alert('⏳ Estamos verificando tu solicitud con Addi. Te avisaremos por correo cuando tengamos la respuesta. 🌸'),600);
     }
+    history.replaceState(null,'',window.location.pathname);
+  }
+  // Retorno de Sistecrédito
+  const siste=params.get('pago_siste');
+  if(siste!==null){
+    cart=[];if(typeof saveCart==='function')saveCart();if(typeof updateCartUI==='function')updateCartUI();
+    const ref=params.get('paymentRef')||'';
+    const verificar=()=>{
+      fetch('/api/sistecredito-estado?id='+encodeURIComponent(ref)).then(r=>r.json()).then(e=>{
+        const est=(e.estado||'').toLowerCase();
+        if(est==='approved'){
+          marcarPedidoPagado('✅ PAGADO (Sistecrédito)');
+          alert('✅ ¡Tu crédito con Sistecrédito fue aprobado! Tu pedido quedó confirmado. Te contactaremos para coordinar la entrega. 🌸');
+        }else if(['rejected','cancelled','expired','abandoned','failed'].includes(est)){
+          marcarPedidoPagado('❌ Sistecrédito no aprobado');
+          alert('No se completó el pago con Sistecrédito. Puedes intentar de nuevo o elegir otro método. 🌸');
+        }else{
+          alert('⏳ Estamos verificando tu pago con Sistecrédito. Te avisaremos por correo cuando se confirme. 🌸');
+        }
+      }).catch(()=>{ alert('⏳ Estamos verificando tu pago con Sistecrédito. Te avisaremos por correo cuando se confirme. 🌸'); });
+    };
+    if(ref){ setTimeout(verificar,600); }
+    else{ setTimeout(()=>alert('⏳ Estamos verificando tu pago con Sistecrédito. Te avisaremos por correo cuando se confirme. 🌸'),600); }
     history.replaceState(null,'',window.location.pathname);
   }
 }
