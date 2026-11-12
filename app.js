@@ -1959,6 +1959,81 @@ function agregarColorProd(hex,name){
   renderColoresElegidos();
 }
 function quitarColorProd(i){coloresProd.splice(i,1);renderColoresElegidos();}
+
+// ══ TONOS DE TINTE LISSIA (con y sin amoníaco) ══
+// Rojo en la carta = CON amoníaco · Verde = SIN amoníaco. Hex aproximado (ajustable con el selector).
+const TINTES_LISSIA={
+  con:[
+    {c:'1-0',n:'Negro Natural Esencia Onix',h:'#1a1512'},
+    {c:'3-0',n:'Castaño Oscuro Natural Esencia',h:'#3b2a20'},
+    {c:'4-0',n:'Castaño Medio Natural Esencia',h:'#4e3628'},
+    {c:'5-0',n:'Castaño Claro Natural Esencia',h:'#6b4a32'},
+    {c:'6-0',n:'Rubio Oscuro Natural Esencia',h:'#8a6a46'},
+    {c:'7-0',n:'Rubio Mediano Natural Esencia',h:'#a98557'},
+    {c:'8-0',n:'Rubio Claro Natural Esencia',h:'#c6a876'},
+    {c:'9-0',n:'Rubio Muy Claro Natural Esencia',h:'#ddc79a'},
+    {c:'6-1',n:'Rubio Oscuro Ceniza Gris',h:'#6f665b'},
+    {c:'7-1',n:'Rubio Mediano Ceniza Gris',h:'#8a8175'},
+    {c:'8-1',n:'Rubio Claro Gris',h:'#a89f91'},
+    {c:'8-11',n:'Rubio Ceniza Gris Muy Profundo',h:'#3f3b36'},
+    {c:'9-1',n:'Rubio Extraclaro Gris',h:'#c3bcac'},
+    {c:'6-2',n:'Rubio Oscuro Mate Verdemar',h:'#6b6a4f'},
+    {c:'7-2',n:'Rubio Mediano Mate Verdemar',h:'#86855f'},
+    {c:'8-2',n:'Rubio Claro Mate Verdemar',h:'#a3a074'},
+    {c:'9-2',n:'Rubio Extraclaro Mate Verdemar',h:'#c0bd8f'},
+    {c:'6-3',n:'Rubio Oscuro Dorado Brillante',h:'#7c5a2f'},
+    {c:'7-3',n:'Rubio Avellana Brillante',h:'#a67c3e'},
+    {c:'8-3',n:'Rubio Claro Dorado Brillante',h:'#c59a4f'},
+    {c:'5-4',n:'Rubí',h:'#6e1f2a'},
+    {c:'6-4',n:'Rojo Pasión',h:'#7e2230'},
+    {c:'8-4',n:'Rubio Claro Rojo Rubí',h:'#9a3b3f'},
+    {c:'8-43',n:'Rojo Cobrizo',h:'#a84b2a'},
+    {c:'6-45',n:'Rubio Oscuro Rojizo Caoba',h:'#5e2a28'},
+    {c:'8-46',n:'Rojo Cereza',h:'#7a1f2b'},
+    {c:'5-5',n:'Caoba',h:'#4e221f'},
+    {c:'6-5',n:'Rubio Oscuro Caoba',h:'#5c2a24'},
+    {c:'5-7',n:'Chocolate',h:'#3f2a24'},
+    {c:'6-7',n:'Rubio Oscuro Marrón Cacao',h:'#4a342a'},
+    {c:'6-74',n:'Rubio Oscuro Marrón Rojizo',h:'#553029'},
+    {c:'7-7',n:'Chocolate Mediano',h:'#5a4034'},
+    {c:'7-77',n:'Rubio Medio Marrón Intenso',h:'#4d382c'},
+    {c:'8-7',n:'Rubio Claro Marrón Cacao',h:'#6e4f3c'},
+    {c:'4-64',n:'Rojo Berenjena',h:'#3a2230'},
+    {c:'1-1',n:'Negro Azul',h:'#15171f'},
+    {c:'1-6',n:'Negro Violeta',h:'#1a1420'}
+  ],
+  sin:[
+    {c:'1-0',n:'Negro Natural',h:'#1a1512'},
+    {c:'3-0',n:'Castaño Oscuro Natural',h:'#3b2a20'},
+    {c:'4-0',n:'Castaño Medio Natural',h:'#4e3628'},
+    {c:'5-0',n:'Castaño Claro Natural',h:'#6b4a32'},
+    {c:'6-0',n:'Rubio Oscuro Natural',h:'#8a6a46'},
+    {c:'7-0',n:'Rubio Medio Natural',h:'#a98557'},
+    {c:'8-0',n:'Rubio Claro Natural',h:'#c6a876'},
+    {c:'7-11',n:'Rubio Cenizo',h:'#8a8175'},
+    {c:'8-1',n:'Rubio Claro Cenizo',h:'#a89f91'},
+    {c:'6-2',n:'Rubio Oscuro Mate',h:'#6b6a4f'},
+    {c:'8-2',n:'Rubio Claro Mate',h:'#a3a074'},
+    {c:'7-3',n:'Rubio Medio Dorado',h:'#a67c3e'},
+    {c:'8-3',n:'Rubio Claro Dorado',h:'#c59a4f'},
+    {c:'7-44',n:'Rojo Fuego',h:'#8a2a22'},
+    {c:'5-7',n:'Chocolate Malva',h:'#3f2a24'},
+    {c:'6-68',n:'Violeta Púrpura',h:'#3b2740'},
+    {c:'1-11',n:'Negro Azul',h:'#15171f'}
+  ]
+};
+function cargarTintesLissia(variante){
+  const lista=TINTES_LISSIA[variante==='sin'?'sin':'con']||[];
+  let agregados=0;
+  lista.forEach(t=>{
+    const nombre=t.c+' '+t.n;
+    if(coloresProd.some(c=>(c.name||'').toLowerCase()===nombre.toLowerCase()))return;
+    coloresProd.push({name:nombre,hex:t.h,auto:false});
+    agregados++;
+  });
+  renderColoresElegidos();
+  if(typeof showToast==='function')showToast('Se agregaron '+agregados+' tonos Lissia '+(variante==='sin'?'sin':'con')+' amoníaco 🌸',agregados?'success':'error');
+}
 function renombrarColorProd(i,val){
   if(!coloresProd[i])return;
   const c=coloresProd[i];

@@ -12,7 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<link rel="stylesheet" href="estilos.css?v=33">
+<link rel="stylesheet" href="estilos.css?v=35">
 </head>
 <body>
 <div id="login-screen" style="display:flex">
@@ -638,6 +638,14 @@
         <label>Colores disponibles (opcional)</label>
         <p style="font-size:11px;color:var(--gray);margin-bottom:8px">Toca un color de la paleta para agregarlo. Luego ponle el nombre que quieras (Marfil, Tono 1…).</p>
         <input type="hidden" id="f-colors">
+        <div style="background:#fdf5f6;border:1px solid #f0d9de;border-radius:7px;padding:9px 11px;margin-bottom:10px">
+          <div style="font-size:11px;color:#8a5a66;font-weight:600;margin-bottom:7px">💇 ¿Es un tinte Lissia? Carga todos los tonos de una:</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="act-btn" onclick="cargarTintesLissia('con')" style="background:#b5516a;color:#fff;border:none">Con amoníaco (37 tonos)</button>
+            <button type="button" class="act-btn" onclick="cargarTintesLissia('sin')" style="background:#16a34a;color:#fff;border:none">Sin amoníaco (17 tonos)</button>
+          </div>
+          <div style="font-size:10px;color:var(--gray);margin-top:6px">Luego puedes borrar los tonos que no tengas con la ✕.</div>
+        </div>
         <div id="paleta-colores" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;max-height:150px;overflow-y:auto;padding:6px;border:1px solid var(--border);border-radius:6px"></div>
         <div id="colores-elegidos" style="display:flex;flex-direction:column;gap:6px"></div>
       </div>
@@ -665,6 +673,6 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="app.js?v=33"></script>
+<script src="app.js?v=35"></script>
 </body>
 </html>
