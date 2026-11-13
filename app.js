@@ -1989,7 +1989,7 @@ function renderPaleta(){
 }
 function agregarColorProd(hex,name){
   if(coloresProd.some(c=>(c.hex||'').toLowerCase()===hex.toLowerCase()))return; // evita duplicado
-  coloresProd.push({name:name||'',hex});
+  coloresProd.push({name:name||'',hex,stock:1});
   renderColoresElegidos();
 }
 function quitarColorProd(i){coloresProd.splice(i,1);renderColoresElegidos();}
@@ -2062,7 +2062,7 @@ function cargarTintesLissia(variante){
   lista.forEach(t=>{
     const nombre=t.c+' '+t.n;
     if(coloresProd.some(c=>(c.name||'').toLowerCase()===nombre.toLowerCase()))return;
-    coloresProd.push({name:nombre,hex:t.h,auto:false});
+    coloresProd.push({name:nombre,hex:t.h,auto:false,stock:1});
     agregados++;
   });
   renderColoresElegidos();
@@ -2079,14 +2079,15 @@ const ESMALTES={
   magk:[{c:'12026',h:'#be2882'},{c:'12158',h:'#fdffac'},{c:'12045',h:'#f4bea8'},{c:'12094',h:'#fefefe'},{c:'12119',h:'#d7c05a'},{c:'12096',h:'#838383'},{c:'12147',h:'#bdb9b9'},{c:'12153',h:'#e3dfdf'},{c:'13001',h:'#e7e4e4'},{c:'13002',h:'#fdd9c7'},{c:'13003',h:'#ebb9a2'},{c:'13000',h:'#ffffff'}],
   crystalGel:[{c:'18023',h:'#577252'},{c:'18026',h:'#785789'}],
   exma:[{c:'2137',h:'#1bd0d4'},{c:'2178',h:'#6f9966'}],
+  masglo:[{c:'Tiza',h:'#ffffff'},{c:'Blanco Nácar',h:'#f9f9f9'},{c:'Educada',h:'#e9eff7'},{c:'Liberada',h:'#f7f5f6'},{c:'Nieve',h:'#e5e5eb'},{c:'Natural',h:'#e5dedd'},{c:'Calmada',h:'#eae6ec'},{c:'Ejecutiva',h:'#f1f2f4'},{c:'Prisionera',h:'#e6d4db'},{c:'Exagerada',h:'#c7a6bc'},{c:'Talentosa',h:'#d0b6bd'},{c:'Tierna',h:'#dec7c3'},{c:'Atrevida',h:'#e1cec7'},{c:'Bella',h:'#f8f1ed'},{c:'Francés',h:'#ebcec9'},{c:'Novia',h:'#f6e2ea'},{c:'Regia',h:'#bfa29b'},{c:'Original',h:'#847e7d'},{c:'Visos Plata',h:'#d1d3d2'},{c:'Famosa',h:'#93a0a9'},{c:'Gitana',h:'#8f9092'},{c:'Innovadora',h:'#c3becc'},{c:'Metódica',h:'#ca9e9f'},{c:'Granizado',h:'#a98565'},{c:'Glamorosa',h:'#8e7a5d'},{c:'Artesana',h:'#eab43b'},{c:'Bailadora',h:'#f0d000'},{c:'Trascendental',h:'#e9e086'},{c:'Astuta',h:'#f1de93'},{c:'Generosa',h:'#fcf6d5'},{c:'Eléctrica',h:'#7ab929'},{c:'Abrumadora',h:'#384134'},{c:'Activista',h:'#84a17a'},{c:'Fresca',h:'#9abdac'},{c:'Morronga',h:'#aedbdd'},{c:'Inspiradora',h:'#b6ccc3'},{c:'Imparable',h:'#90cabc'},{c:'Adorable',h:'#a6c0b7'},{c:'Indomable',h:'#55a7b1'},{c:'Luchadora',h:'#61ba9c'},{c:'Entretenida',h:'#008984'},{c:'Marinera',h:'#0d8494'},{c:'Auténtica',h:'#2d4a5f'},{c:'Encantadora',h:'#3b4e6c'},{c:'Atractiva',h:'#1a377e'},{c:'Casquivana',h:'#296fb6'},{c:'Cool',h:'#005fab'},{c:'Burlona',h:'#13a6b6'},{c:'Tranquila',h:'#91d3eb'},{c:'Tremenda',h:'#9ed5db'},{c:'Bendecida',h:'#d1dce6'},{c:'Solidaria',h:'#d3e0ea'},{c:'Controladora',h:'#c5c4e4'},{c:'Tóxica',h:'#b7b7dc'},{c:'Soltera',h:'#c2bcd4'},{c:'Amante',h:'#a498be'},{c:'Consentida',h:'#8175ae'},{c:'Extraordinaria',h:'#a062a5'},{c:'Silenciosa',h:'#bb8ec0'},{c:'Exótica',h:'#a22b87'},{c:'Vanguardista',h:'#7c6d95'},{c:'Tirana',h:'#462a3e'},{c:'Inquieta',h:'#454b99'},{c:'Arriesgada',h:'#611e57'},{c:'Querendona',h:'#5c2140'},{c:'Revolucionaria',h:'#60103b'},{c:'Malvada',h:'#801d3d'},{c:'Amistosa',h:'#ae1064'},{c:'Chic',h:'#9b1f49'},{c:'Sexy',h:'#e60060'},{c:'Campeona',h:'#e51a60'},{c:'Fanática',h:'#e95586'},{c:'Emocional',h:'#eb68a3'},{c:'Emprendedora',h:'#e16c8d'},{c:'Bombón',h:'#f4a5a4'},{c:'Visos Rosa',h:'#ecc5d1'},{c:'Dinámica',h:'#ae4593'},{c:'Estupenda',h:'#cd7cb2'},{c:'Amigable',h:'#e56aa3'},{c:'Actual',h:'#cc6492'},{c:'Imponente',h:'#df8ab9'},{c:'Razonable',h:'#eab3cc'},{c:'Candidata',h:'#eda5c9'},{c:'Juguetona',h:'#f1b2d1'},{c:'Ilusión',h:'#e4bad0'},{c:'Rebelde',h:'#f8ccdc'},{c:'Mimada',h:'#eaacc5'},{c:'Perfeccionista',h:'#efd2e7'},{c:'Recatada',h:'#dacbe2'},{c:'Provocadora',h:'#c4a7bc'},{c:'Virginal',h:'#a68b92'},{c:'Quisquillosa',h:'#96635f'},{c:'Neurótica',h:'#74504e'},{c:'Cómica',h:'#c66e7e'},{c:'Presumida',h:'#b34c5a'},{c:'Expresiva',h:'#88413d'},{c:'Humana',h:'#b38f85'},{c:'Sofisticada',h:'#c7a9a6'},{c:'Intrigante',h:'#ab7d7c'},{c:'Idealista',h:'#bd8c80'},{c:'Matrimonio',h:'#c6b7b6'},{c:'Compulsiva',h:'#dcbaa8'},{c:'Fiera',h:'#d0aa8e'},{c:'Primera Dama',h:'#b2a097'},{c:'Paciente',h:'#b99699'},{c:'Refinada',h:'#bda2b3'},{c:'Nativa',h:'#ae9d98'},{c:'Materialista',h:'#63535a'},{c:'Empática',h:'#36231b'},{c:'Intuitiva',h:'#825247'},{c:'Diva',h:'#e39777'},{c:'Dominante',h:'#dfb6ae'},{c:'Amable',h:'#f4a5a6'},{c:'Zángana',h:'#ec6e22'},{c:'Buscona',h:'#f3976c'},{c:'Provocativa',h:'#ed6b7d'},{c:'Fufurufa',h:'#ce1619'},{c:'Conectada',h:'#e33333'},{c:'Orgullosa',h:'#911117'},{c:'Distinguida',h:'#d3143c'},{c:'Farandulera',h:'#c01923'},{c:'Linda',h:'#b3163d'},{c:'Fiesta',h:'#a61923'},{c:'Profesional',h:'#89162c'},{c:'Torera',h:'#720d22'},{c:'Mágica',h:'#6a1b27'},{c:'Lujuriosa',h:'#5d0b23'},{c:'Ausente',h:'#5d1f29'},{c:'Insinuante',h:'#4e1421'},{c:'Golosa',h:'#5f0e2a'},{c:'Gomela',h:'#430516'},{c:'Sangre Toro',h:'#25161a'},{c:'Negro',h:'#1d1d1b'},{c:'Glaseado',h:'#b6c6ca'},{c:'Fascinante',h:'#dae0dd'}],
 };
-const NOMBRE_LINEA_ESMALTE={winColor:'WinColor',crystalNails:'Crystal Nails',jbl:'JBL',gelpolish:'Gelpolish',my:'M&Y',magk:'Magk',crystalGel:'Crystal Gel',exma:'Exma'};
+const NOMBRE_LINEA_ESMALTE={winColor:'WinColor',crystalNails:'Crystal Nails',jbl:'JBL',gelpolish:'Gelpolish',my:'M&Y',magk:'Magk',crystalGel:'Crystal Gel',exma:'Exma',masglo:'Masglo Tradicional'};
 function cargarEsmaltes(linea){
   const lista=ESMALTES[linea]||[];
   let n=0;
   lista.forEach(e=>{
     if(coloresProd.some(c=>(c.name||'').toLowerCase()===String(e.c).toLowerCase()))return;
-    coloresProd.push({name:String(e.c),hex:e.h,auto:false});
+    coloresProd.push({name:String(e.c),hex:e.h,auto:false,stock:1});
     n++;
   });
   renderColoresElegidos();
@@ -2201,7 +2202,7 @@ async function autollenarConIA(){
         nm=String(nm||'').trim(); if(!nm)return;
         const pal=PALETA_COLORES.find(c=>c.n.toLowerCase()===nm.toLowerCase());
         const hex=pal?pal.h:(getColorHex(nm)||tonoPielAuto(nm)||'#dddddd');
-        if(!coloresProd.some(c=>(c.name||'').toLowerCase()===nm.toLowerCase()))coloresProd.push({name:nm,hex});
+        if(!coloresProd.some(c=>(c.name||'').toLowerCase()===nm.toLowerCase()))coloresProd.push({name:nm,hex,stock:1});
       });
       renderColoresElegidos();
     }
