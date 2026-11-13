@@ -6,26 +6,76 @@
 //   ADDI_CLIENT_ID      -> Client Id de Addi
 //   ADDI_CLIENT_SECRET  -> Client Secret de Addi
 //   (opcional) ADDI_ENV -> "produccion" (por defecto) o "sandbox"
+//
+// Acciones:
+//   POST (sin action)        -> crea la aplicación y devuelve la URL de pago
+//   GET  ?action=estado      -> consulta el estado por ?orderId= y actualiza el pedido
+
+const { marcarPedidoPorOrderId } = require('./_firestore');
+
+function addiToken(authData) { return authData && authData.access_token; }
+// Mapea el estado de Addi a nuestro texto de panel. null = sigue pendiente.
+function estadoPanelAddi(estado) {
+  const e = String(estado || '').toLowerCase();
+  if (e.includes('approved')) return '✅ PAGADO (Addi)';
+  if (e.includes('rejected') || e.includes('declined') || e.includes('abandoned') || e.includes('cancel')) return '❌ Addi cancelado';
+  return null;
+}
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  const action = (req.query && req.query.action) || '';
+  const clientId0 = process.env.ADDI_CLIENT_ID;
+  const clientSecret0 = process.env.ADDI_CLIENT_SECRET;
+  const sandbox0 = (process.env.ADDI_ENV || 'produccion').toLowerCase() === 'sandbox';
+  const AUTH_URL0 = sandbox0 ? 'https://auth.addi-staging.com/oauth/token' : 'https://auth.addi.com/oauth/token';
+  const API_BASE0 = sandbox0 ? 'https://api.addi-staging.com/' : 'https://api.addi.com/';
+  const AUDIENCE0 = sandbox0 ? 'https://api.staging.addi.com' : 'https://api.addi.com';
+
+  // ───── VERIFICAR ESTADO POR orderId (botón del panel) ─────
+  if (action === 'estado') {
+    try {
+      if (!clientId0 || !clientSecret0) return res.status(200).json({ ok: false, error: 'Faltan credenciales de Addi en el servidor' });
+      const orderId = (req.query && req.query.orderId) || '';
+      if (!orderId) return res.status(400).json({ ok: false, error: 'Falta orderId' });
+      const authResp = await fetch(AUTH_URL0, {
+        method: 'POST', headers: { 'content-type': 'application/json', 'accept': 'application/json' },
+        body: JSON.stringify({ audience: AUDIENCE0, grant_type: 'client_credentials', client_id: clientId0, client_secret: clientSecret0 })
+      });
+      const token = addiToken(await authResp.json().catch(() => ({})));
+      if (!token) return res.status(200).json({ ok: false, error: 'No se pudo autenticar con Addi' });
+      const r = await fetch(API_BASE0 + 'v1/online-applications/' + encodeURIComponent(orderId), {
+        method: 'GET', headers: { 'accept': 'application/json', 'authorization': 'bearer ' + token }
+      });
+      if (!r.ok) return res.status(200).json({ ok: false, pendiente: true, error: 'Addi aún no reporta estado de este pedido (status ' + r.status + ')' });
+      const d = await r.json().catch(() => ({}));
+      const estado = d.status || d.applicationStatus || d.transactionStatus || (d.application && d.application.status) || '';
+      const textoPanel = estadoPanelAddi(estado);
+      if (textoPanel) { await marcarPedidoPorOrderId(orderId, textoPanel); return res.status(200).json({ ok: true, estado, panel: textoPanel }); }
+      return res.status(200).json({ ok: true, pendiente: true, estado: estado || 'pendiente' });
+    } catch (err) {
+      return res.status(200).json({ ok: false, error: err.message });
+    }
+  }
+
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
 
   try {
-    const clientId = process.env.ADDI_CLIENT_ID;
-    const clientSecret = process.env.ADDI_CLIENT_SECRET;
+    const clientId = clientId0;
+    const clientSecret = clientSecret0;
     if (!clientId || !clientSecret) {
       return res.status(200).json({ error: 'Faltan credenciales de Addi (ADDI_CLIENT_ID / ADDI_CLIENT_SECRET)' });
     }
 
     // Entornos
-    const sandbox = (process.env.ADDI_ENV || 'produccion').toLowerCase() === 'sandbox';
-    const AUTH_URL = sandbox ? 'https://auth.addi-staging.com/oauth/token' : 'https://auth.addi.com/oauth/token';
-    const API_BASE = sandbox ? 'https://api.addi-staging.com/' : 'https://api.addi.com/';
-    const AUDIENCE = sandbox ? 'https://api.staging.addi.com' : 'https://api.addi.com';
+    const sandbox = sandbox0;
+    const AUTH_URL = AUTH_URL0;
+    const API_BASE = API_BASE0;
+    const AUDIENCE = AUDIENCE0;
 
     const { items, cliente, orderId, subtotal, envio } = req.body || {};
     if (!items || !items.length) return res.status(400).json({ error: 'Sin productos' });

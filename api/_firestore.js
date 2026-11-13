@@ -95,6 +95,63 @@ async function marcarPedidoPorOrderId(orderId, estado) {
   }
 }
 
+// Busca un pedido por su campo orderId y devuelve {ok, docId, data}.
+async function obtenerPedidoPorOrderId(orderId) {
+  try {
+    if (!orderId) return { ok: false, error: 'Sin orderId' };
+    const sa = getSA();
+    if (!sa) return { ok: false, error: 'Falta FIREBASE_SERVICE_ACCOUNT' };
+    const token = await getAccessToken(sa);
+    if (!token) return { ok: false, error: 'No se pudo autenticar con Firebase' };
+    const query = {
+      structuredQuery: {
+        from: [{ collectionId: 'pedidos' }],
+        where: { fieldFilter: { field: { fieldPath: 'orderId' }, op: 'EQUAL', value: { stringValue: String(orderId) } } },
+        limit: 1
+      }
+    };
+    const qr = await fetch(BASE + ':runQuery', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(query)
+    });
+    const rows = await qr.json().catch(() => []);
+    const hit = Array.isArray(rows) ? rows.find(r => r && r.document) : null;
+    if (!hit || !hit.document) return { ok: false, error: 'Pedido no encontrado', orderId };
+    const docId = hit.document.name.split('/').pop();
+    const data = {}; const f = hit.document.fields || {};
+    for (const k in f) data[k] = fsDecode(f[k]);
+    return { ok: true, docId, data };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// Actualiza campos arbitrarios de un pedido (por orderId), con la llave de servicio.
+async function actualizarCamposPedido(orderId, campos) {
+  try {
+    if (!orderId || !campos) return { ok: false, error: 'Sin datos' };
+    const sa = getSA();
+    if (!sa) return { ok: false, error: 'Falta FIREBASE_SERVICE_ACCOUNT' };
+    const token = await getAccessToken(sa);
+    if (!token) return { ok: false, error: 'No se pudo autenticar con Firebase' };
+    const found = await obtenerPedidoPorOrderId(orderId);
+    if (!found.ok) return found;
+    const fields = {}; const mask = [];
+    for (const k in campos) { fields[k] = fsEncode(campos[k]); mask.push(k); }
+    if (!mask.length) return { ok: true };
+    const qs = mask.map(m => 'updateMask.fieldPaths=' + encodeURIComponent(m)).join('&');
+    const pr = await fetch(BASE + '/pedidos/' + found.docId + '?' + qs, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields })
+    });
+    return { ok: pr.ok };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
 // ── Conversión de valores Firestore (REST) ↔ JS ──
 function fsDecode(v) {
   if (v == null) return undefined;
@@ -174,4 +231,4 @@ async function descontarStockPorColor(items) {
   }
 }
 
-module.exports = { marcarPedidoPorOrderId, descontarStockPorColor };
+module.exports = { marcarPedidoPorOrderId, descontarStockPorColor, obtenerPedidoPorOrderId, actualizarCamposPedido };

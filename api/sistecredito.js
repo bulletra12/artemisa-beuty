@@ -3,15 +3,23 @@
 // Se elige la acción con ?action= :
 //   ?action=pago     (POST) crea la transacción y devuelve la URL de pago
 //   ?action=estado   (GET)  consulta el estado (?id=transactionId)
+//   ?action=verificar (GET) consulta por ?orderId= y actualiza el pedido en el panel
 //   ?action=webhook  (POST/GET) confirmación de Sistecrédito -> marca el pedido
 //
 // Variables de entorno en Vercel:
 //   SISTECREDITO_SUB_KEY, SISTECREDITO_APP_KEY, SISTECREDITO_APP_TOKEN
 //   (opcional) SISTECREDITO_ENV = "Production" (por defecto) o "Staging"
 
-const { marcarPedidoPorOrderId } = require('./_firestore');
+const { marcarPedidoPorOrderId, obtenerPedidoPorOrderId, actualizarCamposPedido } = require('./_firestore');
 
 const API_BASE = 'https://api.credinet.co/pay';
+
+// Mapea el estado de Sistecrédito a nuestro texto de panel. Devuelve null si sigue pendiente.
+function estadoPanelSiste(estado) {
+  if (estado === 'Approved') return '✅ PAGADO (Sistecrédito)';
+  if (['Rejected', 'Cancelled', 'Expired', 'Abandoned', 'Failed'].includes(estado)) return '❌ Sistecrédito cancelado';
+  return null;
+}
 
 function creds() {
   return {
@@ -96,6 +104,8 @@ module.exports = async function handler(req, res) {
       }
 
       const transactionId = createData.data._id;
+      // Guardar el id de la transacción en el pedido para poder verificarlo luego.
+      try { await actualizarCamposPedido(invoice, { sisteTxId: String(transactionId) }); } catch (e) { /* no bloquea el pago */ }
       let url = sacarUrl(createData);
       for (let i = 0; i < 4 && !url; i++) {
         await esperar(1200);
@@ -119,6 +129,24 @@ module.exports = async function handler(req, res) {
       const q = await fetch(API_BASE + '/GetTransactionResponse?transactionId=' + encodeURIComponent(id), { method: 'GET', headers: headersSiste(c) });
       const d = await q.json().catch(() => ({}));
       return res.status(200).json({ url: sacarUrl(d), estado: (d.data && d.data.transactionStatus) || '' });
+    }
+
+    // ───── VERIFICAR POR orderId (botón del panel) ─────
+    if (action === 'verificar') {
+      const c = creds();
+      if (!c.subKey || !c.appKey || !c.appToken) return res.status(200).json({ ok: false, error: 'Faltan credenciales de Sistecrédito en el servidor' });
+      const orderId = (req.query && req.query.orderId) || '';
+      if (!orderId) return res.status(400).json({ ok: false, error: 'Falta orderId' });
+      const ped = await obtenerPedidoPorOrderId(orderId);
+      if (!ped.ok) return res.status(200).json({ ok: false, error: 'No encontré ese pedido' });
+      const txId = ped.data && ped.data.sisteTxId;
+      if (!txId) return res.status(200).json({ ok: false, pendiente: true, error: 'Ese pedido no tiene transacción de Sistecrédito guardada (pedido viejo). Aparecerá al recibir el aviso.' });
+      const q = await fetch(API_BASE + '/GetTransactionResponse?transactionId=' + encodeURIComponent(txId), { method: 'GET', headers: headersSiste(c) });
+      const d = await q.json().catch(() => ({}));
+      const estado = (d.data && d.data.transactionStatus) || '';
+      const textoPanel = estadoPanelSiste(estado);
+      if (textoPanel) { await marcarPedidoPorOrderId(orderId, textoPanel); return res.status(200).json({ ok: true, estado, panel: textoPanel }); }
+      return res.status(200).json({ ok: true, pendiente: true, estado: estado || 'pendiente' });
     }
 
     // ───── WEBHOOK / CONFIRMACIÓN ─────
