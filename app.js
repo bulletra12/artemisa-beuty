@@ -3506,23 +3506,61 @@ async function enviarMensaje(){
   }
 
   try{
-    const prodInfo = products.slice(0,40).map(p=>{
+    const prodInfo = products.slice(0,45).map(p=>{
       const estado = estaAgotado(p) ? 'AGOTADO' : (p.stock==='preventa' ? 'En preventa' : 'Disponible');
       const precio = p.price ? '$'+p.price.toLocaleString('es-CO') : 'consultar';
       const desc = p.desc ? p.desc.substring(0,120) : '';
       let linea = `- ${p.name} (${p.cat}`;
+      if(p.brand) linea += `, marca: ${p.brand}`;
       if(p.subcat) linea += `, para: ${p.subcat}`;
-      linea += `) | Precio: ${precio} | ${estado}`;
+      linea += `) | Precio: ${precio}`;
+      if(p.oldPrice && p.price && p.oldPrice>p.price) linea += ` (en oferta, antes $${p.oldPrice.toLocaleString('es-CO')})`;
+      linea += ` | ${estado}`;
+      // Colores / tonos disponibles
+      if(Array.isArray(p.coloresLista) && p.coloresLista.length){
+        const disp = p.coloresLista.filter(c=>c&&c.name && !(typeof c.stock==='number'&&c.stock<=0)).map(c=>c.name);
+        if(disp.length) linea += ` | Tonos: ${disp.slice(0,30).join(', ')}${disp.length>30?'…':''}`;
+      }
+      // Tamaños / presentaciones con precio
+      if(Array.isArray(p.tamanos) && p.tamanos.length){
+        const tt = p.tamanos.filter(t=>t&&t.t).map(t=>`${t.t}${t.p?' $'+Number(t.p).toLocaleString('es-CO'):''}`);
+        if(tt.length) linea += ` | ${p.tamanoLabel||'Presentaciones'}: ${tt.join(', ')}`;
+      } else if(p.tamano){ linea += ` | Presentación: ${p.tamano}`; }
       if(desc) linea += ` | ${desc}`;
       return linea;
     }).join('\n');
+    // Info de la tienda (envíos, pagos, cómo comprar) — dinámica según tu configuración
+    const envioLineas = Object.keys(COSTOS_ENVIO).map(d=>`${d}: $${(COSTOS_ENVIO[d]||0).toLocaleString('es-CO')}`).join(' · ');
+    const infoTienda = [
+      'ENVÍOS:',
+      `- Costo por departamento: ${envioLineas || 'se cotiza por WhatsApp'}.`,
+      (ENVIO_GRATIS_DESDE>0 ? `- Envío GRATIS en compras desde $${ENVIO_GRATIS_DESDE.toLocaleString('es-CO')}.` : '- No hay envío gratis por ahora.'),
+      '- Si el departamento no aparece, se cotiza por WhatsApp. Envíos a todo Colombia.',
+      '',
+      'MEDIOS DE PAGO:',
+      '- 💳 Mercado Pago: tarjeta de crédito/débito, PSE y Nequi (pago en línea inmediato).',
+      '- 🔵 Addi: paga a cuotas (o con PSE). Aprobación rápida con la cédula.',
+      '- 🟢 Sistecrédito: paga a cuotas con tu cupo Sistecrédito.',
+      '- 📲 Pago contra entrega: pagas cuando recibes el pedido (según cobertura).',
+      '',
+      'CÓMO COMPRAR (pasos):',
+      '1) Elige el producto y, si aplica, su color/tono y presentación (tamaño).',
+      '2) Toca “Agregar al carrito” (puedes seguir agregando más).',
+      '3) Abre el carrito y completa tus datos (nombre, cédula, teléfono, ciudad y dirección).',
+      '4) Elige departamento para ver el envío y escoge el medio de pago.',
+      '5) Confirma. También puedes pedir por WhatsApp si prefieres.',
+      '',
+      'CONTACTO / DEVOLUCIONES:',
+      '- WhatsApp: +57 310 7809662. Las devoluciones o cambios se gestionan por ese WhatsApp.'
+    ].join('\n');
     const res = await fetch('/api/chatbot',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         mensaje: texto,
         historial: chatHistorial.slice(-6),
-        productos: prodInfo
+        productos: prodInfo,
+        tienda: infoTienda
       })
     });
     const data = await res.json();
