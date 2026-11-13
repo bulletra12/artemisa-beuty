@@ -12,7 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<link rel="stylesheet" href="estilos.css?v=49">
+<link rel="stylesheet" href="estilos.css?v=50">
 </head>
 <body>
 <div id="login-screen" style="display:flex">
@@ -676,8 +676,9 @@
         <input id="f-tamano" placeholder="Ej: 30 ml · 250 g · 100 cápsulas">
       </div>
       <div class="ff">
-        <label>Tamaños con precio (opcional)</label>
-        <p style="font-size:11px;color:var(--gray);margin-bottom:8px">Si el producto viene en varias presentaciones con distinto precio (ej: 10 ml, 15 ml), agrégalas aquí. El cliente elige el tamaño y el precio cambia solo. Deja el "Precio venta" como el del tamaño más pequeño.</p>
+        <label>Variantes con precio (opcional)</label>
+        <p style="font-size:11px;color:var(--gray);margin-bottom:8px">Si el producto viene en varias opciones con distinto precio (ej: 10 ml / 15 ml, o aromas, o tipos), agrégalas aquí. El cliente elige una y el precio cambia solo. Deja el "Precio venta" como el de la opción más barata.</p>
+        <input id="f-tamano-label" placeholder="Título de la variante (ej: Tamaño, Presentación, Aroma, Tipo)" style="margin-bottom:8px">
         <div id="tamanos-elegidos" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
         <button type="button" class="act-btn" onclick="agregarTamano()" style="background:var(--light);border:1px dashed var(--border);color:var(--black)">➕ Añadir tamaño</button>
       </div>
@@ -734,6 +735,6 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="app.js?v=49"></script>
+<script src="app.js?v=50"></script>
 </body>
 </html>
