@@ -492,12 +492,14 @@ function openProductDetail(id){
       const bg=c.hex||'#ddd';
       const inner=(!c.hex)?`<span style="font-size:9px;color:#555;display:flex;align-items:center;justify-content:center;height:100%;padding:2px;text-align:center;line-height:1">${c.name}</span>`:'';
       const agotado=(typeof c.stock==='number' && c.stock<=0);
+      const cn=(c.name||'').toLowerCase();
       if(agotado){
-        return`<div class="color-swatch" style="width:36px;height:36px;border-radius:6px;border:2px solid transparent;background:${bg};flex-shrink:0;position:relative;opacity:.4;cursor:not-allowed" title="${c.name} (Agotado)">${inner}<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:17px;color:#c0392b;font-weight:800">✕</span></div>`;
+        return`<div class="color-swatch" data-cn="${cn.replace(/"/g,'')}" style="width:36px;height:36px;border-radius:6px;border:2px solid transparent;background:${bg};flex-shrink:0;position:relative;opacity:.4;cursor:not-allowed" title="${c.name} (Agotado)">${inner}<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:17px;color:#c0392b;font-weight:800">✕</span></div>`;
       }
-      return`<div class="color-swatch" style="width:36px;height:36px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all .2s;background:${bg};flex-shrink:0" title="${c.name}" onclick="selectColor('${c.name.replace(/'/g,"\\'")}',this)">${inner}</div>`;
+      return`<div class="color-swatch" data-cn="${cn.replace(/"/g,'')}" style="width:36px;height:36px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all .2s;background:${bg};flex-shrink:0" title="${c.name}" onclick="selectColor('${c.name.replace(/'/g,"\\'")}',this)">${inner}</div>`;
     }).join('');
-    colorHtml=`<div style="margin:14px 0 8px"><div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:6px;font-weight:600">Color: <span id="sel-color-lb" style="color:var(--primary)">Selecciona un color</span></div><div id="pd-colores-wrap" class="pd-col-collapse" style="display:flex;gap:8px;flex-wrap:wrap">${swatches}</div><button type="button" id="pd-colores-toggle" onclick="toggleColores()" style="display:none;margin-top:8px;background:none;border:none;color:var(--primary);font-weight:600;font-size:12px;cursor:pointer;font-family:var(--sans);padding:0">Ver más colores ▾</button></div>`;
+    const buscador=colorPares.length>12?`<input type="text" oninput="filtrarColoresPD(this.value)" placeholder="🔍 Buscar color (ej: café, rojo, 7-77)" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--sans);margin-bottom:8px;outline:none">`:'';
+    colorHtml=`<div style="margin:14px 0 8px"><div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:6px;font-weight:600">Color: <span id="sel-color-lb" style="color:var(--primary)">Selecciona un color</span></div>${buscador}<div id="pd-colores-wrap" class="pd-col-collapse" style="display:flex;gap:8px;flex-wrap:wrap">${swatches}</div><div id="pd-colores-vacio" style="display:none;font-size:12px;color:var(--gray);margin-top:4px">No hay colores con ese nombre.</div><button type="button" id="pd-colores-toggle" onclick="toggleColores()" style="display:none;margin-top:8px;background:none;border:none;color:var(--primary);font-weight:600;font-size:12px;cursor:pointer;font-family:var(--sans);padding:0">Ver más colores ▾</button></div>`;
   }
   g('product-detail-body').innerHTML=`
     <div class="pd-col-img">
@@ -552,6 +554,22 @@ function toggleColores(){
   const cw=g('pd-colores-wrap'),cg=g('pd-colores-toggle');if(!cw)return;
   const open=cw.classList.toggle('open');
   if(cg)cg.textContent=open?'Ver menos colores ▴':'Ver más colores ▾';
+}
+// Filtra los swatches de la ficha por el nombre del color
+function filtrarColoresPD(q){
+  const cw=g('pd-colores-wrap');if(!cw)return;
+  const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+  const qq=norm(q);
+  const cg=g('pd-colores-toggle'),vacio=g('pd-colores-vacio');
+  let visibles=0;
+  cw.querySelectorAll('.color-swatch').forEach(sw=>{
+    const match=!qq || norm(sw.getAttribute('data-cn')).includes(qq);
+    sw.style.display=match?'':'none';
+    if(match)visibles++;
+  });
+  if(qq){ cw.classList.add('open'); if(cg)cg.style.display='none'; }
+  else { if(cg&&cw.scrollHeight>cw.clientHeight+10){/* vuelve a colapsar */} }
+  if(vacio)vacio.style.display=(qq&&visibles===0)?'block':'none';
 }
 function cambiarPdQty(delta){
   window._pdQty=Math.max(1,(window._pdQty||1)+delta);
@@ -1991,6 +2009,27 @@ function agregarColorProd(hex,name){
   if(coloresProd.some(c=>(c.hex||'').toLowerCase()===hex.toLowerCase()))return; // evita duplicado
   coloresProd.push({name:name||'',hex,stock:1});
   renderColoresElegidos();
+}
+// Pone en mayúscula inicial cada palabra (café oscuro -> Café Oscuro)
+function _tituloColor(s){return String(s||'').split(' ').map(w=>w?w.charAt(0).toUpperCase()+w.slice(1):w).join(' ');}
+// Lista unificada para buscar: paleta visual + diccionario de colores con nombre
+let _listaBuscarColor=null;
+function listaBuscarColor(){
+  if(_listaBuscarColor)return _listaBuscarColor;
+  const vistos=new Set(), out=[];
+  (typeof PALETA_COLORES!=='undefined'?PALETA_COLORES:[]).forEach(c=>{const k=(c.n||'').toLowerCase();if(k&&!vistos.has(k)){vistos.add(k);out.push({n:c.n,h:c.h});}});
+  try{ for(const [k,v] of Object.entries(colorMap)){ if(!vistos.has(k)){vistos.add(k);out.push({n:_tituloColor(k),h:v});} } }catch(e){}
+  _listaBuscarColor=out; return out;
+}
+// Buscador de colores del panel: escribe "café", "rojo"… y muestra coincidencias para agregar
+function buscarColorPanel(q){
+  const cont=g('paleta-colores');if(!cont)return;
+  const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+  const qq=norm(q);
+  if(!qq){ renderPaleta(); return; }
+  const res=listaBuscarColor().filter(c=>norm(c.n).includes(qq)).slice(0,60);
+  if(!res.length){ cont.innerHTML='<div style="font-size:12px;color:var(--gray);padding:6px">Sin resultados para “'+String(q).replace(/[<>]/g,'')+'”. Usa el selector de abajo para ponerlo a mano.</div>'; return; }
+  cont.innerHTML=res.map(c=>`<div title="${c.n}" onclick="agregarColorProd('${c.h}','${c.n.replace(/'/g,'')}')" style="display:flex;align-items:center;gap:6px;cursor:pointer;background:#fff;border:1px solid var(--border);border-radius:14px;padding:3px 10px 3px 4px"><span style="width:18px;height:18px;border-radius:50%;background:${c.h};border:1px solid rgba(0,0,0,.15);flex-shrink:0"></span><span style="font-size:11px;color:#333;white-space:nowrap">${c.n}</span></div>`).join('');
 }
 function quitarColorProd(i){coloresProd.splice(i,1);renderColoresElegidos();}
 
