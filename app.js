@@ -493,10 +493,11 @@ function openProductDetail(id){
       const inner=(!c.hex)?`<span style="font-size:9px;color:#555;display:flex;align-items:center;justify-content:center;height:100%;padding:2px;text-align:center;line-height:1">${c.name}</span>`:'';
       const agotado=(typeof c.stock==='number' && c.stock<=0);
       const cn=(c.name||'').toLowerCase();
+      const dh=(typeof c.hex==='string'&&/^#?[0-9a-fA-F]{3,8}$/.test(c.hex))?c.hex.replace(/"/g,''):'';
       if(agotado){
-        return`<div class="color-swatch" data-cn="${cn.replace(/"/g,'')}" style="width:36px;height:36px;border-radius:6px;border:2px solid transparent;background:${bg};flex-shrink:0;position:relative;opacity:.4;cursor:not-allowed" title="${c.name} (Agotado)">${inner}<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:17px;color:#c0392b;font-weight:800">✕</span></div>`;
+        return`<div class="color-swatch" data-cn="${cn.replace(/"/g,'')}" data-hex="${dh}" style="width:36px;height:36px;border-radius:6px;border:2px solid transparent;background:${bg};flex-shrink:0;position:relative;opacity:.4;cursor:not-allowed" title="${c.name} (Agotado)">${inner}<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:17px;color:#c0392b;font-weight:800">✕</span></div>`;
       }
-      return`<div class="color-swatch" data-cn="${cn.replace(/"/g,'')}" style="width:36px;height:36px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all .2s;background:${bg};flex-shrink:0" title="${c.name}" onclick="selectColor('${c.name.replace(/'/g,"\\'")}',this)">${inner}</div>`;
+      return`<div class="color-swatch" data-cn="${cn.replace(/"/g,'')}" data-hex="${dh}" style="width:36px;height:36px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all .2s;background:${bg};flex-shrink:0" title="${c.name}" onclick="selectColor('${c.name.replace(/'/g,"\\'")}',this)">${inner}</div>`;
     }).join('');
     const buscador=colorPares.length>12?`<input type="text" oninput="filtrarColoresPD(this.value)" placeholder="🔍 Buscar color (ej: café, rojo, 7-77)" style="width:100%;box-sizing:border-box;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--sans);margin-bottom:8px;outline:none">`:'';
     colorHtml=`<div style="margin:14px 0 8px"><div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:6px;font-weight:600">Color: <span id="sel-color-lb" style="color:var(--primary)">Selecciona un color</span></div>${buscador}<div id="pd-colores-wrap" class="pd-col-collapse" style="display:flex;gap:8px;flex-wrap:wrap">${swatches}</div><div id="pd-colores-vacio" style="display:none;font-size:12px;color:var(--gray);margin-top:4px">No hay colores con ese nombre.</div><button type="button" id="pd-colores-toggle" onclick="toggleColores()" style="display:none;margin-top:8px;background:none;border:none;color:var(--primary);font-weight:600;font-size:12px;cursor:pointer;font-family:var(--sans);padding:0">Ver más colores ▾</button></div>`;
@@ -555,20 +556,55 @@ function toggleColores(){
   const open=cw.classList.toggle('open');
   if(cg)cg.textContent=open?'Ver menos colores ▴':'Ver más colores ▾';
 }
-// Filtra los swatches de la ficha por el nombre del color
+// Convierte #hex -> {h,s,l} (matiz 0-360, saturación/luz 0-1)
+function hexToHsl(hex){
+  if(typeof hex!=='string')return null;
+  let x=hex.replace('#','').trim();
+  if(x.length===3)x=x.split('').map(c=>c+c).join('');
+  if(!/^[0-9a-fA-F]{6}/.test(x))return null;
+  const r=parseInt(x.slice(0,2),16)/255,gc=parseInt(x.slice(2,4),16)/255,b=parseInt(x.slice(4,6),16)/255;
+  const mx=Math.max(r,gc,b),mn=Math.min(r,gc,b),d=mx-mn;
+  let h=0;const l=(mx+mn)/2;const s=d===0?0:d/(1-Math.abs(2*l-1));
+  if(d!==0){
+    if(mx===r)h=((gc-b)/d)%6; else if(mx===gc)h=(b-r)/d+2; else h=(r-gc)/d+4;
+    h*=60; if(h<0)h+=360;
+  }
+  return {h,s,l};
+}
+// Familias de tono: si el cliente escribe una de estas palabras, se filtra por color real además del nombre
+const FAMILIAS_TONO=[
+  {keys:['negro','negra'], test:(h,s,l)=>l<=0.17},
+  {keys:['blanco','blanca'], test:(h,s,l)=>l>=0.88&&s<0.18},
+  {keys:['gris','plata','plateado','plateada','gris claro','gris oscuro'], test:(h,s,l)=>s<0.14&&l>0.17&&l<0.88},
+  {keys:['cafe','castano','castaño','marron','marrón','chocolate','moka','mocha','cacao','capuchino','capuccino','tierra','avellana'], test:(h,s,l)=>(h>=8&&h<=45)&&l>=0.1&&l<=0.52&&s>=0.1},
+  {keys:['rubio','rubia','dorado','dorada','miel','mostaza','trigo','arena'], test:(h,s,l)=>(h>=33&&h<=62)&&l>=0.42&&s>=0.18},
+  {keys:['cobrizo','cobriza','cobre','naranja','durazno','terracota'], test:(h,s,l)=>(h>=10&&h<=36)&&l>0.33&&s>=0.32},
+  {keys:['rojo','roja','rojizo','rojiza','vino','cereza','caoba','borgona','borgoña','pelirrojo','carmesi','rubi','frambuesa'], test:(h,s,l)=>((h>=344||h<=13))&&s>=0.22&&l>0.1&&l<0.72},
+  {keys:['rosa','rosado','rosada','fucsia','magenta','palo de rosa'], test:(h,s,l)=>((h>300&&h<344))&&s>=0.12&&l>0.16},
+  {keys:['morado','morada','violeta','purpura','púrpura','lila','lavanda','uva','ciruela'], test:(h,s,l)=>h>=258&&h<=300&&s>=0.1&&l>0.16},
+  {keys:['azul','celeste','turquesa','marino','aguamarina'], test:(h,s,l)=>h>=182&&h<=258&&s>=0.12&&l>0.14},
+  {keys:['verde','menta','esmeralda','oliva','jade','pino'], test:(h,s,l)=>h>=74&&h<=176&&s>=0.12&&l>0.18},
+  {keys:['amarillo','amarilla'], test:(h,s,l)=>h>=50&&h<=72&&l>0.4&&s>=0.25}
+];
+// Filtra los swatches de la ficha por NOMBRE y por TONO real del color
 function filtrarColoresPD(q){
   const cw=g('pd-colores-wrap');if(!cw)return;
   const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
   const qq=norm(q);
   const cg=g('pd-colores-toggle'),vacio=g('pd-colores-vacio');
+  // ¿La búsqueda coincide con una familia de tono? (ej "cafe", "rojo")
+  const fams=qq?FAMILIAS_TONO.filter(f=>f.keys.some(k=>norm(k)===qq||(qq.length>=3&&norm(k).includes(qq)))):[];
   let visibles=0;
   cw.querySelectorAll('.color-swatch').forEach(sw=>{
-    const match=!qq || norm(sw.getAttribute('data-cn')).includes(qq);
+    let match=!qq || norm(sw.getAttribute('data-cn')).includes(qq);
+    if(!match && fams.length){
+      const hsl=hexToHsl(sw.getAttribute('data-hex')||'');
+      if(hsl)match=fams.some(f=>{try{return f.test(hsl.h,hsl.s,hsl.l);}catch(e){return false;}});
+    }
     sw.style.display=match?'':'none';
     if(match)visibles++;
   });
   if(qq){ cw.classList.add('open'); if(cg)cg.style.display='none'; }
-  else { if(cg&&cw.scrollHeight>cw.clientHeight+10){/* vuelve a colapsar */} }
   if(vacio)vacio.style.display=(qq&&visibles===0)?'block':'none';
 }
 function cambiarPdQty(delta){
@@ -2028,7 +2064,8 @@ function buscarColorPanel(q){
   const qq=norm(q);
   if(!qq){ renderPaleta(); return; }
   const res=listaBuscarColor().filter(c=>norm(c.n).includes(qq)).slice(0,60);
-  if(!res.length){ cont.innerHTML='<div style="font-size:12px;color:var(--gray);padding:6px">Sin resultados para “'+String(q).replace(/[<>]/g,'')+'”. Usa el selector de abajo para ponerlo a mano.</div>'; return; }
+  const esc=t=>String(t).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  if(!res.length){ cont.innerHTML='<div style="font-size:12px;color:var(--gray);padding:6px">Sin resultados para “'+esc(q)+'”. Usa el selector de abajo para ponerlo a mano.</div>'; return; }
   cont.innerHTML=res.map(c=>`<div title="${c.n}" onclick="agregarColorProd('${c.h}','${c.n.replace(/'/g,'')}')" style="display:flex;align-items:center;gap:6px;cursor:pointer;background:#fff;border:1px solid var(--border);border-radius:14px;padding:3px 10px 3px 4px"><span style="width:18px;height:18px;border-radius:50%;background:${c.h};border:1px solid rgba(0,0,0,.15);flex-shrink:0"></span><span style="font-size:11px;color:#333;white-space:nowrap">${c.n}</span></div>`).join('');
 }
 function quitarColorProd(i){coloresProd.splice(i,1);renderColoresElegidos();}
