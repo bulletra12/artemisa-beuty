@@ -3506,20 +3506,22 @@ async function enviarMensaje(){
   }
 
   try{
-    const prodInfo = products.slice(0,45).map(p=>{
+    // Enviamos TODOS los productos (no solo los primeros), en formato compacto para que Luna los conozca todos.
+    const listaProd = products.filter(p=>!estaOculto(p));
+    const prodInfo = listaProd.map(p=>{
       const estado = estaAgotado(p) ? 'AGOTADO' : (p.stock==='preventa' ? 'En preventa' : 'Disponible');
       const precio = p.price ? '$'+p.price.toLocaleString('es-CO') : 'consultar';
-      const desc = p.desc ? p.desc.substring(0,120) : '';
+      const desc = p.desc ? p.desc.substring(0,90).replace(/\s+/g,' ').trim() : '';
       let linea = `- ${p.name} (${p.cat}`;
       if(p.brand) linea += `, marca: ${p.brand}`;
       if(p.subcat) linea += `, para: ${p.subcat}`;
-      linea += `) | Precio: ${precio}`;
-      if(p.oldPrice && p.price && p.oldPrice>p.price) linea += ` (en oferta, antes $${p.oldPrice.toLocaleString('es-CO')})`;
+      linea += `) | ${precio}`;
+      if(p.oldPrice && p.price && p.oldPrice>p.price) linea += ` (oferta, antes $${p.oldPrice.toLocaleString('es-CO')})`;
       linea += ` | ${estado}`;
-      // Colores / tonos disponibles
+      // Tonos: resumen compacto (cantidad + algunos ejemplos) para no inflar el texto
       if(Array.isArray(p.coloresLista) && p.coloresLista.length){
         const disp = p.coloresLista.filter(c=>c&&c.name && !(typeof c.stock==='number'&&c.stock<=0)).map(c=>c.name);
-        if(disp.length) linea += ` | Tonos: ${disp.slice(0,30).join(', ')}${disp.length>30?'…':''}`;
+        if(disp.length) linea += ` | ${disp.length} tono(s)${disp.length?': '+disp.slice(0,8).join(', ')+(disp.length>8?'…':''):''}`;
       }
       // Tamaños / presentaciones con precio
       if(Array.isArray(p.tamanos) && p.tamanos.length){
