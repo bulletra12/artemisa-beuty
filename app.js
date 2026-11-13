@@ -2068,6 +2068,19 @@ function cargarTintesLissia(variante){
   renderColoresElegidos();
   if(typeof showToast==='function')showToast('Se agregaron '+agregados+' tonos Lissia '+(variante==='sin'?'sin':'con')+' amoníaco 🌸',agregados?'success':'error');
 }
+// ══ TINTES IGORA ROYAL (tonos vendibles, sin extravagantes) ══
+const TINTES_IGORA=[{c:'3-0',n:'Castaño Oscuro Natural',h:'#13190d'},{c:'4-0',n:'Castaño Medio Natural',h:'#252719'},{c:'5-0',n:'Castaño Claro Natural',h:'#2d291d'},{c:'6-0',n:'Rubio Oscuro Natural',h:'#3d392c'},{c:'7-0',n:'Rubio Medio Natural',h:'#5a4d3a'},{c:'8-0',n:'Rubio Claro Natural',h:'#8a7254'},{c:'9-0',n:'Rubio Muy Claro Natural',h:'#a68a66'},{c:'10-0',n:'Rubio Platino Natural',h:'#e4cba8'},{c:'12-0',n:'Súper Aclarante Natural',h:'#ead7b4'},{c:'5-00',n:'Castaño Claro Natural Intenso',h:'#2b2318'},{c:'6-00',n:'Rubio Oscuro Natural Intenso',h:'#3a2d1f'},{c:'7-00',n:'Rubio Medio Natural Intenso',h:'#554636'},{c:'8-00',n:'Rubio Claro Natural Intenso',h:'#7c6448'},{c:'9-00',n:'Rubio Muy Claro Natural Intenso',h:'#a48a66'},{c:'5-1',n:'Castaño Claro Ceniza',h:'#1f1b16'},{c:'6-1',n:'Rubio Oscuro Ceniza',h:'#2a2620'},{c:'7-1',n:'Rubio Medio Ceniza',h:'#4a443c'},{c:'8-1',n:'Rubio Claro Ceniza',h:'#6a6054'},{c:'9-1',n:'Rubio Muy Claro Ceniza',h:'#9a9184'},{c:'10-1',n:'Rubio Platino Ceniza',h:'#e3d4ba'},{c:'12-1',n:'Súper Aclarante Ceniza',h:'#e8dcc0'},{c:'6-4',n:'Rubio Oscuro Beige',h:'#36301f'},{c:'7-4',n:'Rubio Medio Beige',h:'#6a5740'},{c:'8-4',n:'Rubio Claro Beige',h:'#8a7254'},{c:'9-4',n:'Rubio Muy Claro Beige',h:'#a98c68'},{c:'10-4',n:'Rubio Platino Beige',h:'#e6cba4'},{c:'12-4',n:'Súper Aclarante Beige',h:'#ecd9b4'},{c:'5-5',n:'Castaño Claro Dorado',h:'#2a1f12'},{c:'6-5',n:'Rubio Oscuro Dorado',h:'#4a3a24'},{c:'7-5',n:'Rubio Medio Dorado',h:'#8a6238'},{c:'8-5',n:'Rubio Claro Dorado',h:'#97764a'},{c:'5-57',n:'Castaño Claro Dorado Cobrizo',h:'#4a2d28'},{c:'7-57',n:'Rubio Medio Dorado Cobrizo',h:'#79503a'},{c:'9-57',n:'Rubio Muy Claro Dorado Cobrizo',h:'#b2824f'},{c:'7-46',n:'Rubio Medio Nude',h:'#6e5240'},{c:'8-46',n:'Rubio Claro Nude',h:'#b89175'},{c:'9-46',n:'Rubio Muy Claro Nude',h:'#ceab8c'},{c:'10-46',n:'Rubio Platino Nude',h:'#e4c6a4'},{c:'4-13',n:'Castaño Medio Ceniza Mate',h:'#16231f'},{c:'5-63',n:'Castaño Claro Marrón Mate',h:'#6e5a46'},{c:'4-6',n:'Castaño Medio Marrón',h:'#2a1e16'},{c:'5-6',n:'Castaño Claro Marrón',h:'#3a2418'},{c:'6-6',n:'Rubio Oscuro Marrón',h:'#43352c'},{c:'4-68',n:'Castaño Medio Marrón Rojo',h:'#231712'},{c:'5-68',n:'Castaño Claro Marrón Rojo',h:'#3a241c'},{c:'6-68',n:'Rubio Oscuro Marrón Rojo',h:'#46362c'},{c:'3-65',n:'Castaño Oscuro Marrón Dorado',h:'#241a12'},{c:'4-65',n:'Castaño Medio Marrón Dorado',h:'#2d2118'},{c:'5-65',n:'Castaño Claro Marrón Dorado',h:'#38301c'},{c:'6-63',n:'Rubio Oscuro Marrón Mate',h:'#6a5a44'},{c:'6-77',n:'Rubio Oscuro Cobrizo Intenso',h:'#9b3f22'},{c:'7-77',n:'Rubio Medio Cobrizo Intenso',h:'#a44a24'},{c:'8-77',n:'Rubio Claro Cobrizo Intenso',h:'#b05a30'},{c:'6-7',n:'Rubio Oscuro Cobrizo',h:'#7a3a22'},{c:'7-7',n:'Rubio Medio Cobrizo',h:'#9c4e2a'},{c:'4-88',n:'Castaño Medio Rojo Intenso',h:'#3a1e1c'},{c:'5-88',n:'Castaño Claro Rojo Intenso',h:'#5c201d'},{c:'6-88',n:'Rubio Oscuro Rojo Intenso',h:'#5a211f'},{c:'4-99',n:'Castaño Medio Violeta',h:'#1b1526'},{c:'7-50',n:'Rubio Medio Dorado Natural',h:'#6a4f36'},{c:'8-50',n:'Rubio Claro Dorado Natural',h:'#8a6a44'},{c:'9-50',n:'Rubio Muy Claro Dorado Natural',h:'#b2894f'},{c:'6-60',n:'Rubio Oscuro Marrón Natural',h:'#4a3a2c'},{c:'7-60',n:'Rubio Medio Marrón Natural',h:'#6a4f3a'},{c:'8-60',n:'Rubio Claro Marrón Natural',h:'#8a6c50'},{c:'7-70',n:'Rubio Medio Cobrizo Natural',h:'#7a4a32'},{c:'9-40',n:'Rubio Muy Claro Beige Natural',h:'#a98c68'},{c:'10-14',n:'Rubio Platino Ceniza Beige',h:'#e6d6ba'},{c:'10-21',n:'Rubio Platino Humo',h:'#dcdcd4'}];
+function cargarIgora(){
+  let agregados=0;
+  TINTES_IGORA.forEach(t=>{
+    const nombre=t.c+' '+t.n;
+    if(coloresProd.some(c=>(c.name||'').toLowerCase()===nombre.toLowerCase()))return;
+    coloresProd.push({name:nombre,hex:t.h,auto:false,stock:1});
+    agregados++;
+  });
+  renderColoresElegidos();
+  if(typeof showToast==='function')showToast('Se agregaron '+agregados+' tonos Igora Royal 🌸',agregados?'success':'error');
+}
 
 // ══ ESMALTES (semipermanentes MundiBelleza) ══
 const ESMALTES={
@@ -3030,6 +3043,7 @@ function renderPedidos(){
               ${(()=>{const e=p.estado||'';if(/PAGADO/i.test(e))return '<span style="font-size:11px;font-weight:600;background:#eafbf0;color:#276749;padding:3px 10px;border-radius:12px;border:1px solid #bfe9cf">✓ Pagado</span>';if(/rechaz/i.test(e))return '<span style="font-size:11px;font-weight:600;background:#fff0f0;color:#c0392b;padding:3px 10px;border-radius:12px;border:1px solid #f3c0c0">✗ Pago rechazado</span>';if(/sin confirmar/i.test(e))return '<span style="font-size:11px;font-weight:600;background:#fff5e0;color:#b7791f;padding:3px 10px;border-radius:12px;border:1px solid #f0d9a0">⏳ Pago sin confirmar</span>';return '';})()}
             </div>
             <div style="display:flex;align-items:center;gap:8px">
+              ${(()=>{const m=p.metodoPago||'';const yaResuelto=/PAGADO|cancel|rechaz/i.test(p.estado||'');if((m==='Addi'||m==='Sistecrédito')&&p.orderId&&!yaResuelto){return `<button class="act-btn" id="verif-${p.id}" onclick="verificarPagoPedido('${p.id}','${String(p.orderId).replace(/'/g,'')}','${m}')" style="padding:5px 10px;background:#5b3fb8;color:#fff;border:none;font-weight:600" title="Preguntarle a ${m} si este pedido ya quedó pagado">🔄 Verificar pago</button>`;}return '';})()}
               <select onchange="cambiarEstadoPedido('${p.id}',this.value)" style="font-size:12px;border:1px solid var(--border);padding:5px 8px;border-radius:4px;font-family:var(--sans);outline:none;background:#fff;cursor:pointer">
                 <option value="⏳ Pendiente" ${(p.estado||'⏳ Pendiente')==='⏳ Pendiente'?'selected':''}>⏳ Pendiente</option>
                 <option value="✅ PAGADO" ${/PAGADO/i.test(p.estado||'')?'selected':''}>✅ Pagado</option>
@@ -3107,6 +3121,33 @@ async function cambiarEstadoPedido(id, estado){
     }
     showToast('Estado actualizado ✓','success');
   }catch(e){showToast('Error al actualizar','error')}
+}
+
+// Le pregunta a la pasarela (Addi/Sistecrédito) si el pedido ya quedó pagado y actualiza el chulo.
+async function verificarPagoPedido(id, orderId, metodo){
+  const btn=document.getElementById('verif-'+id);
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Consultando…'; }
+  const restaurar=()=>{ if(btn){ btn.disabled=false; btn.textContent='🔄 Verificar pago'; } };
+  try{
+    const url = metodo==='Sistecrédito'
+      ? '/api/sistecredito?action=verificar&orderId='+encodeURIComponent(orderId)
+      : '/api/addi-pago?action=estado&orderId='+encodeURIComponent(orderId);
+    const res=await fetch(url);
+    const d=await res.json().catch(()=>({}));
+    if(d && d.ok && d.panel){
+      const p=pedidosCache.find(x=>x.id===id);
+      if(p) p.estado=d.panel;
+      renderPedidos();
+      showToast(/PAGADO/i.test(d.panel)?('✅ '+metodo+': pago confirmado'):('❌ '+metodo+': quedó cancelado'),'success');
+      return;
+    }
+    if(d && (d.pendiente || (d.ok && !d.panel))){
+      showToast('Aún no hay respuesta de '+metodo+' para este pedido. Si el cliente no ha terminado de pagar, no despaches todavía.','error');
+      restaurar(); return;
+    }
+    showToast((d && d.error) ? d.error : ('No pude consultar con '+metodo),'error');
+    restaurar();
+  }catch(e){ showToast('Error de conexión al verificar','error'); restaurar(); }
 }
 
 function enviarPedidoAMiWhatsApp(id){
