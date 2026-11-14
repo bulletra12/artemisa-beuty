@@ -205,9 +205,23 @@ let nextId=9,editId=null,selEmoji='✨',cart=[],photoMode='file',currentImg=null
 // ══ TIENDA ══
 function imgHtml(p){
   const onload="this.classList.add('visible');var c=this.closest('.card-img');if(c)c.classList.add('cargada')";
-  if(p.img&&p.img.startsWith('http'))return`<img src="${p.img}" loading="lazy" style="width:100%;height:100%;object-fit:cover" onload="${onload}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';var c=this.closest('.card-img');if(c)c.classList.add('cargada')"><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:72px">${p.emoji||'✨'}</span>`;
+  if(p.img&&p.img.startsWith('http'))return`<img src="${p.img}" loading="lazy" style="width:100%;height:100%;object-fit:cover" onload="${onload}" onerror="imgRetry(this)"><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:72px">${p.emoji||'✨'}</span>`;
   if(p.img&&p.img.startsWith('data'))return`<img src="${p.img}" loading="lazy" style="width:100%;height:100%;object-fit:cover" onload="${onload}">`;
   return`<span style="font-size:72px">${p.emoji||'✨'}</span>`;
+}
+// Reintenta cargar una foto hasta 2 veces (por fallos de red al recargar) antes de mostrar el emoji
+function imgRetry(img){
+  const n=(parseInt(img.dataset.try||'0',10)+1);
+  img.dataset.try=String(n);
+  if(n<=2){
+    let base=img.getAttribute('data-osrc');
+    if(!base){ base=img.getAttribute('src')||''; img.setAttribute('data-osrc',base); }
+    setTimeout(()=>{ try{ img.src=''; img.src=base; }catch(e){} }, 700*n);
+  }else{
+    img.style.display='none';
+    const sib=img.nextElementSibling; if(sib) sib.style.display='flex';
+    const c=img.closest('.card-img'); if(c)c.classList.add('cargada');
+  }
 }
 let currentBrand='Todas', currentSubcat='Todos';
 
@@ -460,6 +474,7 @@ function selectColor(color,el){
 }
 function openProductDetail(id){
   const p=products.find(x=>x.id===id);if(!p)return;
+  clearTimeout(window._pdCloseTimer); // cancela el limpiado pendiente si reabres rápido
   window._selectedColor=null;window._pdQty=1;
   window._pdProductId=id;
   window._selectedTamano=(p.tamanos&&p.tamanos.length)?p.tamanos[0]:null;
@@ -469,7 +484,7 @@ function openProductDetail(id){
   const galeria=(p.imgs&&p.imgs.length)?p.imgs:(p.img?[p.img]:[]);
   const principal=galeria[0]||null;
   const imgHt=principal
-    ?`<img id="pd-main-img" src="${principal}" style="width:100%;height:100%;object-fit:contain;object-position:center;display:block" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:100px">${p.emoji||'✨'}</span>`
+    ?`<img id="pd-main-img" src="${principal}" style="width:100%;height:100%;object-fit:contain;object-position:center;display:block" onerror="imgRetry(this)"><span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:100px">${p.emoji||'✨'}</span>`
     :`<span style="font-size:100px">${p.emoji||'✨'}</span>`;
   // Tira de miniaturas si hay más de una foto
   const thumbsHt=(galeria.length>1)
@@ -641,7 +656,17 @@ function addCartWithColor(id){
   showToast('✓ '+qty+' × '+p.name+(tam?' ('+tam.t+')':'')+(window._selectedColor?' - '+window._selectedColor:'')+ ' añadido','success');
   closeProductDetail();
 }
-function closeProductDetail(){g('product-detail-modal').classList.remove('open')}
+function closeProductDetail(){
+  const m=g('product-detail-modal');if(!m)return;
+  m.classList.remove('open');
+  window._pdProductId=null;
+  // Tras cerrar, vacía el contenido para liberar memoria (foto grande, widget Addi, zoom).
+  // Con guardia: si reabres antes de 350ms, no se limpia.
+  clearTimeout(window._pdCloseTimer);
+  window._pdCloseTimer=setTimeout(()=>{
+    if(!m.classList.contains('open')){ const b=g('product-detail-body'); if(b) b.innerHTML=''; }
+  },350);
+}
 function cambiarFotoPrincipal(el,url){
   const main=g('pd-main-img');if(!main)return;
   main.style.transform='scale(1)';main.style.display='block';main.src=url;
@@ -3413,9 +3438,11 @@ async function cargarReviewsFirebase(){
 }
 
 // ══ CHATBOT LUNA ══
-const CHAT_LIMIT = 12;
+const CHAT_LIMIT = 15;   // tope de preguntas por día (por navegador) para no gastar tokens de más
+const CHAT_NUDGE = 10;   // a esta cantidad, Luna sugiere seguir por WhatsApp (sin cortar aún)
 let chatHistorial = [];
 let chatAbierto = false;
+let chatEnviando = false; // candado: evita que taps en ráfaga lancen muchas consultas a la vez
 
 function getChatUso(){
   const hoy = new Date().toDateString();
@@ -3483,6 +3510,7 @@ function agregarTyping(){
 }
 
 async function enviarMensaje(){
+  if(chatEnviando) return; // ya hay una pregunta en curso: ignora taps repetidos
   const input = g('chat-input');
   const texto = input.value.trim();
   if(!texto) return;
@@ -3494,6 +3522,10 @@ async function enviarMensaje(){
     return;
   }
 
+  chatEnviando = true;
+  const sendBtn = g('chat-send');
+  if(sendBtn){ sendBtn.disabled = true; sendBtn.style.opacity = '.5'; sendBtn.style.cursor = 'default'; }
+  if(input) input.disabled = true;
   input.value = '';
   agregarMensaje(texto, 'user');
   chatHistorial.push({role:'user', content:texto});
@@ -3571,10 +3603,21 @@ async function enviarMensaje(){
     if(typing) typing.remove();
     agregarMensaje(respuesta, 'bot');
     chatHistorial.push({role:'assistant', content:respuesta});
+    // Aviso suave al llegar a varias preguntas: invitar al WhatsApp (una sola vez)
+    if(nuevaUso === CHAT_NUDGE){
+      agregarMensaje('Oye, llevamos varias preguntas 🌸 Para algo más detallado o para cerrar tu compra rápido, también puedes escribirme al WhatsApp 👉 +57 310 7809662. ¡Con gusto te ayudo por allá! 💬', 'bot');
+    }
   }catch(e){
     const typing = document.getElementById('typing-indicator');
     if(typing) typing.remove();
     agregarMensaje('Ups, hubo un error. Intenta de nuevo 🌸', 'bot');
+  }finally{
+    // Libera el candado y reactiva el input/botón, pase lo que pase
+    chatEnviando = false;
+    const sendBtn = g('chat-send');
+    if(sendBtn){ sendBtn.disabled = false; sendBtn.style.opacity = '1'; sendBtn.style.cursor = 'pointer'; }
+    const inp = g('chat-input');
+    if(inp && getChatUso() < CHAT_LIMIT){ inp.disabled = false; inp.focus(); }
   }
 }
 
